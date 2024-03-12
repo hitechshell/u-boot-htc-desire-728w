@@ -113,6 +113,7 @@ enum uclass_id {
 	UCLASS_PMIC,		/* PMIC I/O device */
 	UCLASS_POWER_DOMAIN,	/* (SoC) Power domains */
 	UCLASS_PVBLOCK,		/* Xen virtual block device */
+    UCLASS_PWRAP,
 	UCLASS_PWM,		/* Pulse-width modulator */
 	UCLASS_PWRSEQ,		/* Power sequence device */
 	UCLASS_QFW,		/* QEMU firmware config device */

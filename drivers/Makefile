@@ -26,6 +26,7 @@ obj-$(CONFIG_$(SPL_TPL_)PCI) += pci/
 obj-$(CONFIG_$(SPL_TPL_)PHY) += phy/
 obj-$(CONFIG_$(SPL_TPL_)PINCTRL) += pinctrl/
 obj-$(CONFIG_$(SPL_TPL_)POWER) += power/
+obj-$(CONFIG_PWRAP) += pwrap/
 obj-$(CONFIG_$(SPL_TPL_)RAM) += ram/
 obj-$(CONFIG_$(SPL_TPL_)RTC) += rtc/
 obj-$(CONFIG_$(SPL_TPL_)SERIAL) += serial/

@@ -98,6 +98,8 @@ source "drivers/pinctrl/Kconfig"
 
 source "drivers/power/Kconfig"
 
+source "drivers/pwrap/Kconfig"
+
 source "drivers/pwm/Kconfig"
 
 source "drivers/qe/Kconfig"
