@@ -44,7 +44,6 @@ config EFI_BINARY_EXEC
 config EFI_BOOTMGR
 	bool "UEFI Boot Manager"
 	default y
-	select BOOTMETH_GLOBAL if BOOTSTD
 	help
 	  Select this option if you want to select the UEFI binary to be booted
 	  via UEFI variables Boot####, BootOrder, and BootNext. You should also
@@ -366,7 +365,7 @@ config EFI_HAVE_RUNTIME_RESET
 	bool
 	default y
 	depends on ARCH_BCM283X || FSL_LAYERSCAPE || PSCI_RESET || \
-		   SANDBOX || SYSRESET_X86
+		   SANDBOX || SYSRESET_SBI || SYSRESET_X86
 
 config EFI_GRUB_ARM32_WORKAROUND
 	bool "Workaround for GRUB on 32bit ARM"

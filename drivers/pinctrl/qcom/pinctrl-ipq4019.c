@@ -40,13 +40,17 @@ static const char *ipq4019_get_pin_name(struct udevice *dev,
 	return pin_name;
 }
 
-static unsigned int ipq4019_get_function_mux(unsigned int selector)
+static unsigned int ipq4019_get_function_mux(__maybe_unused unsigned int pin,
+					     unsigned int selector)
 {
 	return msm_pinctrl_functions[selector].val;
 }
 
 static const struct msm_pinctrl_data ipq4019_data = {
-	.pin_data = { .pin_count = 100, },
+	.pin_data = {
+		.pin_count = 100,
+		.special_pins_start = 100, /* There are no special pins */
+	},
 	.functions_count = ARRAY_SIZE(msm_pinctrl_functions),
 	.get_function_name = ipq4019_get_function_name,
 	.get_function_mux = ipq4019_get_function_mux,

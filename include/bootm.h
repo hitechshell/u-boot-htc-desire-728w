@@ -273,21 +273,24 @@ int bootm_process_cmdline(char *buf, int maxlen, int flags);
 int bootm_process_cmdline_env(int flags);
 
 /**
- * zboot_start() - Boot a zimage
+ * zboot_run() - Run through the various steps to boot a zimage
  *
  * Boot a zimage, given the component parts
  *
  * @addr: Address where the bzImage is moved before booting, either
  *	BZIMAGE_LOAD_ADDR or ZIMAGE_LOAD_ADDR
- * @base: Pointer to the boot parameters, typically at address
- *	DEFAULT_SETUP_BASE
+ * @size: Size of bzImage, or 0 to detect this
  * @initrd: Address of the initial ramdisk, or 0 if none
  * @initrd_size: Size of the initial ramdisk, or 0 if none
- * @cmdline: Command line to use for booting
+ * @base_addr: If non-zero, this indicates that the boot parameters have already
+ *	been loaded by the caller to this address, so the load_zimage() call
+ *	in zboot_load() will be skipped when booting
+ * @cmdline: If non-NULL, the environment variable containing the command line
+ *	to use for booting
  * Return: -EFAULT on error (normally it does not return)
  */
-int zboot_start(ulong addr, ulong size, ulong initrd, ulong initrd_size,
-		ulong base, char *cmdline);
+int zboot_run(ulong addr, ulong size, ulong initrd, ulong initrd_size,
+	      ulong base, char *cmdline);
 
 /*
  * zimage_get_kernel_version() - Get the version string from a kernel
@@ -314,7 +317,7 @@ void zimage_dump(struct boot_params *base_ptr, bool show_cmdline);
  * bootm_boot_start() - Boot an image at the given address
  *
  * @addr: Image address
- * @cmdline: Command line to set
+ * @cmdline: Command line to set, NULL for default
  */
 int bootm_boot_start(ulong addr, const char *cmdline);
 

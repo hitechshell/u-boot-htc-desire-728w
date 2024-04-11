@@ -16,6 +16,7 @@
 #include <asm/gpio.h>
 #include <dm/pinctrl.h>
 #include <linux/bitops.h>
+#include <linux/bug.h>
 #include <mach/gpio.h>
 
 #include "pinctrl-qcom.h"
@@ -82,10 +83,14 @@ static int msm_pinmux_set(struct udevice *dev, unsigned int pin_selector,
 			  unsigned int func_selector)
 {
 	struct msm_pinctrl_priv *priv = dev_get_priv(dev);
+	u32 func = priv->data->get_function_mux(pin_selector, func_selector);
+
+	/* Always NOP for special pins, assume they're in the correct state */
+	if (qcom_is_special_pin(&priv->data->pin_data, pin_selector))
+		return 0;
 
 	clrsetbits_le32(priv->base + GPIO_CONFIG_REG(priv, pin_selector),
-			TLMM_FUNC_SEL_MASK | TLMM_GPIO_DISABLE,
-			priv->data->get_function_mux(func_selector) << 2);
+			TLMM_FUNC_SEL_MASK | TLMM_GPIO_DISABLE, func << 2);
 	return 0;
 }
 
@@ -93,6 +98,10 @@ static int msm_pinconf_set(struct udevice *dev, unsigned int pin_selector,
 			   unsigned int param, unsigned int argument)
 {
 	struct msm_pinctrl_priv *priv = dev_get_priv(dev);
+
+	/* Always NOP for special pins */
+	if (qcom_is_special_pin(&priv->data->pin_data, pin_selector))
+		return 0;
 
 	switch (param) {
 	case PIN_CONFIG_DRIVE_STRENGTH:
@@ -135,6 +144,9 @@ int msm_pinctrl_bind(struct udevice *dev)
 	struct udevice *pinctrl_dev;
 	const char *name;
 	int ret;
+
+	if (!data->pin_data.special_pins_start)
+		dev_warn(dev, "Special pins start index not defined!\n");
 
 	drv = lists_driver_lookup_name("pinctrl_qcom");
 	if (!drv)

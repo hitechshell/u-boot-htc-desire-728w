@@ -31,7 +31,7 @@ endif
 obj-$(CONFIG_CPU_V7M) += cmd_boot.o
 obj-$(CONFIG_OF_LIBFDT) += bootm-fdt.o
 obj-$(CONFIG_CMD_BOOTI) += bootm.o image.o
-obj-$(CONFIG_CMD_BOOTM) += bootm.o
+obj-$(CONFIG_BOOTM) += bootm.o
 obj-$(CONFIG_CMD_BOOTZ) += bootm.o zimage.o
 else
 obj-$(CONFIG_$(SPL_TPL_)FRAMEWORK) += spl.o
@@ -84,6 +84,8 @@ CFLAGS_REMOVE_cache-cp15.o := $(LTO_CFLAGS)
 obj-y	+= psci-dt.o
 
 obj-$(CONFIG_DEBUG_LL)	+= debug.o
+
+obj-$(CONFIG_BLOBLIST)  += xferlist.o
 
 # For EABI conformant tool chains, provide eabi_compat()
 ifneq (,$(findstring -mabi=aapcs-linux,$(PLATFORM_CPPFLAGS)))

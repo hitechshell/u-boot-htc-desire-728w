@@ -16,7 +16,7 @@ obj-$(CONFIG_X86_32BIT_INIT) += string.o
 endif
 
 ifndef CONFIG_SPL_BUILD
-obj-$(CONFIG_CMD_BOOTM) += bootm.o
+obj-$(CONFIG_BOOTM) += bootm.o
 endif
 obj-y	+= cmd_boot.o
 obj-$(CONFIG_$(SPL_)COREBOOT_SYSINFO)	+= coreboot/
@@ -48,7 +48,7 @@ obj-$(CONFIG_$(SPL_TPL_)GENERATE_ACPI_TABLE) += acpi_table.o
 endif
 obj-y	+= tables.o
 ifndef CONFIG_SPL_BUILD
-obj-$(CONFIG_CMD_ZBOOT)	+= zimage.o
+obj-$(CONFIG_ZBOOT) += zimage.o
 endif
 obj-$(CONFIG_USE_HOB) += hob.o
 ifndef CONFIG_TPL_BUILD
