@@ -3,50 +3,50 @@
 #include "mt6735.dtsi"
 
 &clk26m {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 
 &infracfg {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 
 &pericfg {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 
 &mcucfg {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 
 &dramc {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 
 &mmc0 {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 
 &mmc1 {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 
 &apmixedsys {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 
 &topckgen {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 
 &uart0 {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 
 &pwrap {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 
 &pinctrl {
-    u-boot,dm-pre-reloc;
+    bootph-all;
 };
 

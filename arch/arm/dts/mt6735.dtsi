@@ -172,7 +172,6 @@
 		gpio: gpio-controller {
 			gpio-controller;
 			#gpio-cells = <2>;
-            u-boot,dm-pre-reloc;
 		};
 	};
 

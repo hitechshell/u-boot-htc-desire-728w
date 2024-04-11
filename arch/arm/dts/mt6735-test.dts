@@ -20,8 +20,8 @@
 		};
         
     aliases {
-        mmc1 = "/mmc@11230000";
-        mmc0 = "/mmc@11240000";
+        mmc0 = "/mmc@11230000";
+        mmc1 = "/mmc@11240000";
     };
     
     reserved-memory {
@@ -46,7 +46,6 @@
 //      interrupt-parent = <&pio>;
 		interrupts = <GIC_SPI 163 IRQ_TYPE_LEVEL_HIGH>;
 		#interrupt-cells = <2>;
-        u-boot,dm-pre-reloc;
 
 		regulators {
         
@@ -55,7 +54,6 @@
 						regulator-always-on;
 						regulator-min-microvolt = <600000>;
 						regulator-max-microvolt = <1393750>;
-                        u-boot,dm-pre-reloc;
                 };
                 
 			vproc: buck_vproc {
@@ -63,7 +61,6 @@
 						regulator-always-on;
 						regulator-min-microvolt = <600000>;
 						regulator-max-microvolt = <1393750>;
-                        u-boot,dm-pre-reloc;
                 };
                 
 			vlte: buck_vlte {
@@ -71,7 +68,6 @@
 						regulator-always-on;
 						regulator-min-microvolt = <600000>;
 						regulator-max-microvolt = <1393750>;
-                        u-boot,dm-pre-reloc;
                 };
                 
 			vsys22: buck_vsys22 {
@@ -82,7 +78,6 @@
 						regulator-enable-ramp-delay = <180>;
 						regulator-always-on;
 						regulator-boot-on;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vpa: buck_vpa {
@@ -91,7 +86,6 @@
 						regulator-max-microvolt = <3650000>;
 						regulator-ramp-delay = <50000>;
 						regulator-enable-ramp-delay = <180>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vsram: buck_vsram {
@@ -101,7 +95,6 @@
 						regulator-enable-ramp-delay = <220>;
 						regulator-ramp-delay = <6250>;
 						regulator-boot-on;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vaux18: fixed_ldo_vaux18 {
@@ -110,7 +103,6 @@
 						regulator-max-microvolt = <1800000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
-                        u-boot,dm-pre-reloc;
 				};
 
 			vtcxo_0: fixed_ldo_vtcxo_0 {
@@ -119,7 +111,6 @@
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <110>;
 						regulator-boot-on;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vtcxo_1: fixed_ldo_vtcxo_1 {
@@ -127,7 +118,6 @@
 						regulator-min-microvolt = <2800000>;
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <110>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vaud28: fixed_ldo_vaud28 {
@@ -136,7 +126,6 @@
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vcn28: fixed_ldo_vcn28 {
@@ -144,7 +133,6 @@
 						regulator-min-microvolt = <2800000>;
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <264>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vcama: ldo_vcama {
@@ -152,7 +140,6 @@
 						regulator-min-microvolt = <1500000>;
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <264>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vcn33_bt: ldo_vcn33_bt {
@@ -160,7 +147,6 @@
 						regulator-min-microvolt = <3300000>;
 						regulator-max-microvolt = <3600000>;
 						regulator-enable-ramp-delay = <264>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vcn33_wifi: ldo_vcn33_wifi {
@@ -168,7 +154,6 @@
 						regulator-min-microvolt = <3300000>;
 						regulator-max-microvolt = <3600000>;
 						regulator-enable-ramp-delay = <264>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vusb33: ldo_vusb33 {
@@ -177,7 +162,6 @@
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vefuse: ldo_vefuse {
@@ -185,7 +169,6 @@
 						regulator-min-microvolt = <1800000>;
 						regulator-max-microvolt = <2200000>;
 						regulator-enable-ramp-delay = <264>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			sim1: ldo_vsim1 {
@@ -193,7 +176,6 @@
 						regulator-min-microvolt = <1700000>;
 						regulator-max-microvolt = <2100000>;
 						regulator-enable-ramp-delay = <264>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			sim2: ldo_vsim2 {
@@ -201,7 +183,6 @@
 						regulator-min-microvolt = <1700000>;
 						regulator-max-microvolt = <2100000>;
 						regulator-enable-ramp-delay = <264>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vemc_3v3: ldo_vemc3v3 {
@@ -210,7 +191,7 @@
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
-                        u-boot,dm-pre-reloc;
+                        bootph-all;
 				};
                 
 			vmch: ldo_vmch {
@@ -218,7 +199,7 @@
 						regulator-min-microvolt = <2900000>;
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <44>;
-                        u-boot,dm-pre-reloc;
+                        bootph-all;
 				};
                 
 			vtref: fixed_ldo_vtref {
@@ -226,7 +207,6 @@
 						regulator-min-microvolt = <1800000>;
 						regulator-max-microvolt = <1800000>;
 						regulator-enable-ramp-delay = <240>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vmc: ldo_vmc {
@@ -234,7 +214,7 @@
 						regulator-min-microvolt = <1800000>;
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <44>;
-                        u-boot,dm-pre-reloc;
+                        bootph-all;
 				};
                 
 			vcamaf: ldo_vcamaf {
@@ -242,7 +222,6 @@
 						regulator-min-microvolt = <1200000>;
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <264>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vio28: fixed_ldo_vio28 {
@@ -250,9 +229,7 @@
 						regulator-min-microvolt = <2800000>;
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <264>;
-						regulator-boot-on;
-                        u-boot,dm-pre-reloc;
-				};
+						regulator-boot-on;				};
 
 			vrtc: fixed_ldo_vrtc {
 						regulator-name = "fixed_ldo_vrtc";
@@ -260,7 +237,6 @@
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
-                        u-boot,dm-pre-reloc;
                 };
                 
 			vgp1: ldo_vgp1 {
@@ -268,7 +244,6 @@
 						regulator-min-microvolt = <1200000>;
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <264>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vibr: ldo_vibr {
@@ -276,7 +251,6 @@
 						regulator-min-microvolt = <1200000>;
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <44>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vcamd: ldo_vcamd {
@@ -284,7 +258,6 @@
 						regulator-min-microvolt = <900000>;
 						regulator-max-microvolt = <1500000>;
 						regulator-enable-ramp-delay = <264>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vrf18_0: fixed_ldo_vrf18_0 {
@@ -292,7 +265,6 @@
 						regulator-min-microvolt = <1825000>;
 						regulator-max-microvolt = <1825000>;
 						regulator-enable-ramp-delay = <220>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vrf18_1: fixed_ldo_vrf18_1 {
@@ -300,7 +272,6 @@
 						regulator-min-microvolt = <1200000>;
 						regulator-max-microvolt = <1825000>;
 						regulator-enable-ramp-delay = <220>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vio18: fixed_ldo_vio18 {
@@ -309,7 +280,7 @@
 						regulator-max-microvolt = <1800000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
-                        u-boot,dm-pre-reloc;
+                        bootph-all;
 				};
                 
 			vcn18: fixed_ldo_vcn18 {
@@ -317,7 +288,6 @@
 						regulator-min-microvolt = <1800000>;
 						regulator-max-microvolt = <1800000>;
 						regulator-enable-ramp-delay = <44>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vcamio: ldo_vcamio {
@@ -325,7 +295,6 @@
 						regulator-min-microvolt = <1200000>;
 						regulator-max-microvolt = <1800000>;
 						regulator-enable-ramp-delay = <220>;
-                        u-boot,dm-pre-reloc;
 				};
                 
 			vm: ldo_vm {
@@ -334,7 +303,6 @@
 						regulator-max-microvolt = <1540000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
-                        u-boot,dm-pre-reloc;
                 };
             };
             
@@ -344,7 +312,6 @@
 				compatible = "mediatek,mt6328_keys";
 				#gpio-cells = <2>;
 				gpio-controller;
-                u-boot,dm-pre-reloc;
             };
         };
     };
@@ -423,11 +390,10 @@
 
 &pinctrl {
 	mmc0_pins_default: mmc0default {
-        u-boot,dm-pre-reloc;
 		mux {
 			function = "msdc";
 			groups =  "msdc0";
-            u-boot,dm-pre-reloc;
+            bootph-all;
 		};
 
 		conf-cmd-data {
@@ -437,37 +403,36 @@
 			input-enable;
             drive-strength = <6>;
 			bias-pull-up;
-            u-boot,dm-pre-reloc;
+            bootph-all;
 		};
 
 		conf-clk {
 			pins = "MSDC0_CLK";
 			bias-pull-down;
             drive-strength = <6>;
-            u-boot,dm-pre-reloc;
+            bootph-all;
 		};
 
 		conf-ds {
 			pins = "MSDC0_DSL";
 			bias-pull-down;
             drive-strength = <6>;
-            u-boot,dm-pre-reloc;
+            bootph-all;
 		};
 
 		conf-rst {
 			pins = "MSDC0_RSTB";
 			bias-pull-up;
             drive-strength = <6>;
-            u-boot,dm-pre-reloc;
+            bootph-all;
 		};
 	};
 
 	mmc1_pins_default: mmc1default {
-        u-boot,dm-pre-reloc;
 		mux {
 			function = "msdc";
 			groups =  "msdc1";
-            u-boot,dm-pre-reloc;
+            bootph-all;
 		};
 
 		conf-cmd-data {
@@ -476,24 +441,22 @@
 			input-enable;
             drive-strength = <6>;
 			bias-pull-up;
-            u-boot,dm-pre-reloc;
+            bootph-all;
 		};
 
 		conf-clk {
 			pins = "MSDC1_CLK";
 			bias-pull-down;
             drive-strength = <6>;
-            u-boot,dm-pre-reloc;
+            bootph-all;
 		};
 
 	};
 
 	uart0_pins_a: uart0-default {
-        u-boot,dm-pre-reloc;
 		mux {
 			function = "uart";
 			groups =  "uart0_2_txd_rxd";
-            u-boot,dm-pre-reloc;
 		};
 	};
 
@@ -501,7 +464,6 @@
 		mux {
 			function = "uart";
 			groups =  "uart1_1_txd_rxd";
-            u-boot,dm-pre-reloc;
 		};
 	};
 
@@ -509,7 +471,6 @@
 		mux {
 			function = "uart";
 			groups =  "uart2_1_txd_rxd";
-            u-boot,dm-pre-reloc;
 		};
 	};
 
@@ -517,7 +478,6 @@
 		mux {
 			function = "uart";
 			groups =  "uart3_1_txd_rxd";
-            u-boot,dm-pre-reloc;
 		};
 	};
 
@@ -525,14 +485,12 @@
 		mux {
 			function = "usb";
 			groups = "usb";
-            u-boot,dm-pre-reloc;
 		};
 
 		conf-host {
 			pins = "IDDIG", "USB_DRVVBUS";
 			input-enable;
 			bias-pull-up;
-            u-boot,dm-pre-reloc;
 		};
 	};
 
@@ -540,14 +498,12 @@
 		mux {
 			function = "usb";
 			groups = "usb";
-            u-boot,dm-pre-reloc;
 		};
 
 		conf-otg {
 			pins = "IDDIG", "USB_DRVVBUS";
 			input-enable;
 			bias-pull-down;
-            u-boot,dm-pre-reloc;
 		};
 	};
 };
