@@ -1022,7 +1022,7 @@ config ARCH_APPLE
 	select USB
 	imply CMD_DM
 	imply CMD_GPT
-	imply DISTRO_DEFAULTS
+	imply BOOTSTD_FULL
 	imply OF_HAS_PRIOR_STAGE
 
 config ARCH_OWL
@@ -1068,6 +1068,7 @@ config ARCH_RENESAS
 	imply BOARD_EARLY_INIT_F
 	imply CMD_DM
 	imply FAT_WRITE
+	imply OF_UPSTREAM
 	imply SYS_THUMB_BUILD
 	imply ARCH_MISC_INIT if DISPLAY_CPUINFO
 
@@ -1344,7 +1345,7 @@ config ARCH_ZYNQMP
 config ARCH_TEGRA
 	bool "NVIDIA Tegra"
 	select GPIO_EXTRA_HEADER
-	imply DISTRO_DEFAULTS
+	imply BOOTSTD_DEFAULTS
 	imply FAT_WRITE
 	imply SPL_TIMER if SPL
 

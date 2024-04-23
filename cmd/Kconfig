@@ -262,7 +262,6 @@ config CMD_BOOTD
 
 config CMD_BOOTM
 	bool "bootm"
-	depends on BOOTM
 	default y
 	help
 	  Boot an application image from the memory.
@@ -334,6 +333,48 @@ config CMD_BOOTI
 	help
 	  Boot an AArch64 Linux Kernel image from memory.
 
+config BOOTM_LINUX
+	bool "Support booting Linux OS images"
+	depends on CMD_BOOTM || CMD_BOOTZ || CMD_BOOTI
+	default y
+	help
+	  Support booting the Linux kernel directly via a command such as bootm
+	  or booti or bootz.
+
+config BOOTM_NETBSD
+	bool "Support booting NetBSD (non-EFI) loader images"
+	depends on CMD_BOOTM
+	default y
+	help
+	  Support booting NetBSD via the bootm command.
+
+config BOOTM_OPENRTOS
+	bool "Support booting OPENRTOS / FreeRTOS images"
+	depends on CMD_BOOTM
+	help
+	  Support booting OPENRTOS / FreeRTOS via the bootm command.
+
+config BOOTM_OSE
+	bool "Support booting Enea OSE images"
+	depends on (ARM && (ARM64 || CPU_V7A || CPU_V7R) || SANDBOX || PPC || X86)
+	depends on CMD_BOOTM
+	help
+	  Support booting Enea OSE images via the bootm command.
+
+config BOOTM_PLAN9
+	bool "Support booting Plan9 OS images"
+	depends on CMD_BOOTM
+	default y
+	help
+	  Support booting Plan9 images via the bootm command.
+
+config BOOTM_RTEMS
+	bool "Support booting RTEMS OS images"
+	depends on CMD_BOOTM
+	default y
+	help
+	  Support booting RTEMS images via the bootm command.
+
 config CMD_SEAMA
 	bool "Support read SEAMA NAND images"
 	depends on MTD_RAW_NAND
@@ -349,6 +390,13 @@ config CMD_VBE
 	  available methods, looking at the state and changing which method
 	  is used to boot. Updating the parameters is not currently
 	  supported.
+
+config BOOTM_VXWORKS
+	bool "Support booting VxWorks OS images"
+	depends on CMD_BOOTM
+	default y
+	help
+	  Support booting VxWorks images via the bootm command.
 
 config CMD_BOOTEFI
 	bool "bootefi"
@@ -398,7 +446,7 @@ config CMD_BOOTEFI_HELLO
 	  for testing that EFI is working at a basic level, and for bringing
 	  up EFI support on a new architecture.
 
-source lib/efi_selftest/Kconfig
+source "lib/efi_selftest/Kconfig"
 endif
 
 config CMD_BOOTMENU
@@ -444,7 +492,6 @@ config CMD_ELF
 
 config CMD_ELF_FDT_SETUP
 	bool "Flattened Device Tree setup in bootelf cmd"
-	default n
 	depends on CMD_ELF
 	select LIB_LIBFDT
 	select LMB
@@ -1348,7 +1395,9 @@ config CMD_CLONE
 
 config CMD_OPTEE_RPMB
 	bool "Enable read/write support on RPMB via OPTEE"
-	depends on SUPPORT_EMMC_RPMB && OPTEE
+	depends on (SUPPORT_EMMC_RPMB && OPTEE) || SANDBOX_TEE
+	default y if SANDBOX_TEE
+	select OPTEE_TA_AVB if SANDBOX_TEE
 	help
 	  Enable the commands for reading, writing persistent named values
 	  in the Replay Protection Memory Block partition in eMMC by
@@ -2573,7 +2622,6 @@ config CMD_CROS_EC
 config CMD_SCMI
 	bool "Enable scmi command"
 	depends on SCMI_FIRMWARE
-	default n
 	help
 	  This command provides user interfaces to several SCMI (System
 	  Control and Management Interface) protocols available on Arm
