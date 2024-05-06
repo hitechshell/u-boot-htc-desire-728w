@@ -208,18 +208,18 @@ static int mtk_lpddr3_memtest(void)
 {
 	int step;
 	u32 start, test;
-	writel(WALKING_PATTERN, (unsigned long)CONFIG_SYS_SDRAM_BASE);
+	writel(WALKING_PATTERN, (unsigned long)CFG_SYS_SDRAM_BASE);
 
-    if (readl((unsigned long)CONFIG_SYS_SDRAM_BASE) != WALKING_PATTERN) {
-        printf("SDRAM_BASE return 0x%lx = 0x%x\n", (unsigned long)CONFIG_SYS_SDRAM_BASE, readl((unsigned long)CONFIG_SYS_SDRAM_BASE));
+    if (readl((unsigned long)CFG_SYS_SDRAM_BASE) != WALKING_PATTERN) {
+        printf("SDRAM_BASE return 0x%lx = 0x%x\n", (unsigned long)CFG_SYS_SDRAM_BASE, readl((unsigned long)CFG_SYS_SDRAM_BASE));
         return -EINVAL;
     }
     
 	for (step = 0; step < 5; step++) {
-		writel(~WALKING_PATTERN, (unsigned long)CONFIG_SYS_SDRAM_BASE + (WALKING_STEP << step));
+		writel(~WALKING_PATTERN, (unsigned long)CFG_SYS_SDRAM_BASE + (WALKING_STEP << step));
 
-		start = readl(CONFIG_SYS_SDRAM_BASE);
-		test = readl((unsigned long)CONFIG_SYS_SDRAM_BASE + (WALKING_STEP << step));
+		start = readl(CFG_SYS_SDRAM_BASE);
+		test = readl((unsigned long)CFG_SYS_SDRAM_BASE + (WALKING_STEP << step));
 		if ((test != ~WALKING_PATTERN) || test == start)
 			break;
 	}
@@ -871,7 +871,7 @@ static int mtk_lpddr3_get_info(struct udevice *dev, struct ram_info *info)
     unsigned int cona, conh, mem_max, bit_counter = 0;
     unsigned long size;
     int ret;
-    info->base = CONFIG_SYS_SDRAM_BASE;
+    info->base = CFG_SYS_SDRAM_BASE;
     
     ret = ofnode_read_u32(dev_ofnode(dev), "max-size", &mem_max);
     if(ret)
