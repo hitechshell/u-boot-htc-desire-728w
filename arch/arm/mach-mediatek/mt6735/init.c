@@ -207,7 +207,7 @@ int dram_init(void)
 		return ret;
     gd->ram_base = ram.base;
     gd->ram_size = ram.size;
-    printf("RAM init base = 0x%lx, size = 0x%llx\n", gd->ram_base, gd->ram_size);
+    printf("RAM init base = 0x%lx, size = 0x%x\n", ram.base, ram.size);
     
 	return 0;
 }
