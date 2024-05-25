@@ -42,6 +42,22 @@
     bootph-all;
 };
 
+&i2c0 {
+    bootph-all;
+};
+
+&i2c1 {
+    bootph-all;
+};
+
+&i2c2 {
+    bootph-all;
+};
+
+&i2c3 {
+    bootph-all;
+};
+
 &pwrap {
     bootph-all;
 };

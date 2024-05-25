@@ -154,36 +154,42 @@ int mtk_soc_early_init(void)
     ret = uclass_get_device_by_driver(UCLASS_PINCTRL,
             DM_DRIVER_GET(mt6735_pinctrl), &dev);
     if (ret) {
+        printf("pinctrl init failed with error = %d \n", ret);
         return ret;
     }
     
     ret = uclass_get_device_by_driver(UCLASS_PWRAP,
             DM_DRIVER_GET(mtk_pwrap), &dev);
     if (ret) {
+        printf("pwrap init failed with error = %d \n", ret);
         return ret;
     }
     
     ret = uclass_get_device_by_driver(UCLASS_PMIC,
             DM_DRIVER_GET(pmic_mt6328), &dev);
     if (ret) {
+        printf("pmic init failed with error = %d \n", ret);
         return ret;
     }
 
     ret = uclass_get_device_by_driver(UCLASS_REGULATOR,
             DM_DRIVER_GET(mt6328_buck), &dev);
     if (ret) {
+        printf("buck init failed with error = %d \n", ret);
         return ret;
     }
     
     ret = uclass_get_device_by_driver(UCLASS_REGULATOR,
             DM_DRIVER_GET(mt6328_ldo), &dev);
     if (ret) {
+        printf("ldo init failed with error = %d \n", ret);
         return ret;
     }
     
     ret = uclass_get_device_by_driver(UCLASS_REGULATOR,
             DM_DRIVER_GET(mt6328_fixed), &dev);
     if (ret) {
+        printf("fixed init failed with error = %d \n", ret);
         return ret;
     }
     
@@ -207,7 +213,7 @@ int dram_init(void)
 		return ret;
     gd->ram_base = ram.base;
     gd->ram_size = ram.size;
-    printf("RAM init base = 0x%lx, size = 0x%x\n", ram.base, ram.size);
+    printf("RAM init base = 0x%lx, size = 0x%zx\n", gd->ram_base, ram.size);
     
 	return 0;
 }

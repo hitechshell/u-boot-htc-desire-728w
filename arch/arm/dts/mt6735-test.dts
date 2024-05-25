@@ -54,6 +54,7 @@
 						regulator-always-on;
 						regulator-min-microvolt = <600000>;
 						regulator-max-microvolt = <1393750>;
+                        bootph-all;
                 };
                 
 			vproc: buck_vproc {
@@ -61,6 +62,7 @@
 						regulator-always-on;
 						regulator-min-microvolt = <600000>;
 						regulator-max-microvolt = <1393750>;
+                        bootph-all;
                 };
                 
 			vlte: buck_vlte {
@@ -68,6 +70,7 @@
 						regulator-always-on;
 						regulator-min-microvolt = <600000>;
 						regulator-max-microvolt = <1393750>;
+                        bootph-all;
                 };
                 
 			vsys22: buck_vsys22 {
@@ -78,6 +81,7 @@
 						regulator-enable-ramp-delay = <180>;
 						regulator-always-on;
 						regulator-boot-on;
+                        bootph-all;
 				};
                 
 			vpa: buck_vpa {
@@ -86,6 +90,7 @@
 						regulator-max-microvolt = <3650000>;
 						regulator-ramp-delay = <50000>;
 						regulator-enable-ramp-delay = <180>;
+                        bootph-all;
 				};
                 
 			vsram: buck_vsram {
@@ -95,6 +100,7 @@
 						regulator-enable-ramp-delay = <220>;
 						regulator-ramp-delay = <6250>;
 						regulator-boot-on;
+                        bootph-all;
 				};
                 
 			vaux18: fixed_ldo_vaux18 {
@@ -103,6 +109,7 @@
 						regulator-max-microvolt = <1800000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
+                        bootph-all;
 				};
 
 			vtcxo_0: fixed_ldo_vtcxo_0 {
@@ -111,6 +118,7 @@
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <110>;
 						regulator-boot-on;
+                        bootph-all;
 				};
                 
 			vtcxo_1: fixed_ldo_vtcxo_1 {
@@ -118,6 +126,7 @@
 						regulator-min-microvolt = <2800000>;
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <110>;
+                        bootph-all;
 				};
                 
 			vaud28: fixed_ldo_vaud28 {
@@ -126,6 +135,7 @@
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
+                        bootph-all;
 				};
                 
 			vcn28: fixed_ldo_vcn28 {
@@ -133,6 +143,7 @@
 						regulator-min-microvolt = <2800000>;
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <264>;
+                        bootph-all;
 				};
                 
 			vcama: ldo_vcama {
@@ -140,6 +151,7 @@
 						regulator-min-microvolt = <1500000>;
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <264>;
+                        bootph-all;
 				};
                 
 			vcn33_bt: ldo_vcn33_bt {
@@ -147,6 +159,7 @@
 						regulator-min-microvolt = <3300000>;
 						regulator-max-microvolt = <3600000>;
 						regulator-enable-ramp-delay = <264>;
+                        bootph-all;
 				};
                 
 			vcn33_wifi: ldo_vcn33_wifi {
@@ -154,6 +167,7 @@
 						regulator-min-microvolt = <3300000>;
 						regulator-max-microvolt = <3600000>;
 						regulator-enable-ramp-delay = <264>;
+                        bootph-all;
 				};
                 
 			vusb33: ldo_vusb33 {
@@ -162,6 +176,7 @@
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
+                        bootph-all;
 				};
                 
 			vefuse: ldo_vefuse {
@@ -169,6 +184,7 @@
 						regulator-min-microvolt = <1800000>;
 						regulator-max-microvolt = <2200000>;
 						regulator-enable-ramp-delay = <264>;
+                        bootph-all;
 				};
                 
 			sim1: ldo_vsim1 {
@@ -176,6 +192,7 @@
 						regulator-min-microvolt = <1700000>;
 						regulator-max-microvolt = <2100000>;
 						regulator-enable-ramp-delay = <264>;
+                        bootph-all;
 				};
                 
 			sim2: ldo_vsim2 {
@@ -183,6 +200,7 @@
 						regulator-min-microvolt = <1700000>;
 						regulator-max-microvolt = <2100000>;
 						regulator-enable-ramp-delay = <264>;
+                        bootph-all;
 				};
                 
 			vemc_3v3: ldo_vemc3v3 {
@@ -207,6 +225,7 @@
 						regulator-min-microvolt = <1800000>;
 						regulator-max-microvolt = <1800000>;
 						regulator-enable-ramp-delay = <240>;
+                        bootph-all;
 				};
                 
 			vmc: ldo_vmc {
@@ -222,6 +241,7 @@
 						regulator-min-microvolt = <1200000>;
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <264>;
+                        bootph-all;
 				};
                 
 			vio28: fixed_ldo_vio28 {
@@ -229,7 +249,9 @@
 						regulator-min-microvolt = <2800000>;
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <264>;
-						regulator-boot-on;				};
+						regulator-boot-on;
+                        bootph-all;
+                };
 
 			vrtc: fixed_ldo_vrtc {
 						regulator-name = "fixed_ldo_vrtc";
@@ -237,6 +259,7 @@
 						regulator-max-microvolt = <2800000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
+                        bootph-all;
                 };
                 
 			vgp1: ldo_vgp1 {
@@ -244,6 +267,7 @@
 						regulator-min-microvolt = <1200000>;
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <264>;
+                        bootph-all;
 				};
                 
 			vibr: ldo_vibr {
@@ -251,6 +275,7 @@
 						regulator-min-microvolt = <1200000>;
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <44>;
+                        bootph-all;
 				};
                 
 			vcamd: ldo_vcamd {
@@ -258,6 +283,7 @@
 						regulator-min-microvolt = <900000>;
 						regulator-max-microvolt = <1500000>;
 						regulator-enable-ramp-delay = <264>;
+                        bootph-all;
 				};
                 
 			vrf18_0: fixed_ldo_vrf18_0 {
@@ -265,6 +291,7 @@
 						regulator-min-microvolt = <1825000>;
 						regulator-max-microvolt = <1825000>;
 						regulator-enable-ramp-delay = <220>;
+                        bootph-all;
 				};
                 
 			vrf18_1: fixed_ldo_vrf18_1 {
@@ -272,6 +299,7 @@
 						regulator-min-microvolt = <1200000>;
 						regulator-max-microvolt = <1825000>;
 						regulator-enable-ramp-delay = <220>;
+                        bootph-all;
 				};
                 
 			vio18: fixed_ldo_vio18 {
@@ -288,6 +316,7 @@
 						regulator-min-microvolt = <1800000>;
 						regulator-max-microvolt = <1800000>;
 						regulator-enable-ramp-delay = <44>;
+                        bootph-all;
 				};
                 
 			vcamio: ldo_vcamio {
@@ -295,6 +324,7 @@
 						regulator-min-microvolt = <1200000>;
 						regulator-max-microvolt = <1800000>;
 						regulator-enable-ramp-delay = <220>;
+                        bootph-all;
 				};
                 
 			vm: ldo_vm {
@@ -303,6 +333,7 @@
 						regulator-max-microvolt = <1540000>;
 						regulator-enable-ramp-delay = <264>;
 						regulator-boot-on;
+                        bootph-all;
                 };
             };
             
@@ -312,6 +343,7 @@
 				compatible = "mediatek,mt6328_keys";
 				#gpio-cells = <2>;
 				gpio-controller;
+                bootph-all;
             };
         };
     };
@@ -389,6 +421,13 @@
 };
 
 &pinctrl {
+
+    gpio: gpio-controller {
+            gpio-controller;
+            #gpio-cells = <2>;
+            bootph-all;
+        };
+        
 	mmc0_pins_default: mmc0default {
 		mux {
 			function = "msdc";
@@ -506,12 +545,81 @@
 			bias-pull-down;
 		};
 	};
+    
+    i2c0_default: i2c0-default-pins {
+        mux {
+            function = "i2c";
+            groups = "i2c0";
+        };
+        
+        pins-sda-scl {
+            pins = "SDA0", "SCL0";
+        };
+    };
+
+    i2c1_default: i2c1-default-pins {
+        mux {
+            function = "i2c";
+            groups = "i2c1_1";
+        };
+        
+        pins-sda-scl {
+            pins = "SDA1", "SCL1";
+        };
+    };
+
+    i2c2_default: i2c2-default-pins {
+        mux {
+            function = "i2c";
+            groups = "i2c2_0";
+        };
+        
+        pins-sda-scl {
+            pins = "SDA2", "SCL2";
+        };
+    };
+
+    i2c3_default: i2c3-default-pins {
+        mux {
+            function = "i2c";
+            groups = "i2c3_1";
+        };
+        
+        pins-sda-scl {
+            pins = "SDA3", "SCL3";
+        };
+    };
+
 };
 
 &uart0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart0_pins_a>;
 	status = "okay";
+};
+
+&i2c0 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&i2c0_default>;
+    status = "okay";
+};
+
+&i2c1 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&i2c1_default>;
+    status = "okay";
+};
+
+&i2c2 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&i2c2_default>;
+    status = "okay";
+};
+
+&i2c3 {
+    pinctrl-names = "default";
+    pinctrl-0 = <&i2c3_default>;
+    status = "okay";
 };
 
 &uart1 {
