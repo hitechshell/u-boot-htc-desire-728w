@@ -365,11 +365,21 @@ int mtk_pinconf_bias_set_v1(struct udevice *dev, u32 pin, bool disable,
 	/* set pupd_r1_r0 if pullen_pullsel succeeded */
 	err = mtk_pinconf_bias_set_pullen_pullsel(dev, pin, disable, pullup,
 						  val);
-	if (err)
-		return mtk_pinconf_bias_set_pupd_r1_r0(dev, pin, disable,
-						       pullup, val);
-
-	return err;
+    
+    /*  Some pins do not have pullen/pullsel so will return -EINVAL in mtk_pinconf_bias_set_pullen_pullsel.
+        Workaround for this is accepting the -EINVAL for the pins that don't support pullen/pullsel */
+    
+    if (!err) {
+        return mtk_pinconf_bias_set_pupd_r1_r0(dev, pin, disable,
+                                               pullup, val);
+    } else if (err == -EINVAL) {
+            return mtk_pinconf_bias_set_pupd_r1_r0(dev, pin, disable,
+                                   pullup, val);
+    } else {
+        return err;
+    }
+    
+	return 0;
 }
 
 int mtk_pinconf_bias_set_pu_pd(struct udevice *dev, u32 pin, bool disable,
