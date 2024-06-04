@@ -578,19 +578,14 @@ F:	drivers/clk/exynos/clk.h
 ARM SAMSUNG EXYNOS850 SOC
 M:	Sam Protsenko <semen.protsenko@linaro.org>
 S:	Maintained
-F:	arch/arm/dts/exynos850-pinctrl.dtsi
-F:	arch/arm/dts/exynos850.dtsi
-F:	doc/device-tree-bindings/clock/samsung,exynos850-clock.yaml
 F:	drivers/clk/exynos/clk-exynos850.c
 F:	drivers/pinctrl/exynos/pinctrl-exynos850.c
-F:	include/dt-bindings/clock/exynos850.h
 
 ARM SAMSUNG SOC DRIVERS
 M:	Sam Protsenko <semen.protsenko@linaro.org>
 S:	Maintained
-F:	doc/device-tree-bindings/soc/samsung/*
+F:	doc/device-tree-bindings/soc/samsung/exynos-pmu.yaml
 F:	drivers/soc/samsung/*
-F:	include/dt-bindings/soc/samsung,*.h
 
 ARM SANCLOUD
 M:	Paul Barker <paul.barker@sancloud.com>
@@ -1001,8 +996,11 @@ F:	common/update.c
 F:	doc/api/dfu.rst
 F:	doc/usage/dfu.rst
 F:	drivers/dfu/
+F:	drivers/usb/*/*gadget*
 F:	drivers/usb/gadget/
 F:	include/dfu.h
+F:	include/linux/usb/ch9.h
+F:	include/linux/usb/gadget.h
 
 DRIVER MODEL
 M:	Simon Glass <sjg@chromium.org>
@@ -1102,6 +1100,7 @@ F:	test/py/tests/test_event_dump.py
 FASTBOOT
 M:	Mattijs Korpershoek <mkorpershoek@baylibre.com>
 S:	Maintained
+T:	git https://source.denx.de/u-boot/custodians/u-boot-dfu.git
 F:	cmd/fastboot.c
 F:	doc/android/fastboot*.rst
 F:	include/fastboot.h
