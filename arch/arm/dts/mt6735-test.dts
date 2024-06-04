@@ -20,8 +20,8 @@
 		};
         
     aliases {
-        mmc0 = "/mmc@11230000";
-        mmc1 = "/mmc@11240000";
+        mmc1 = "/mmc@11230000";
+        mmc0 = "/mmc@11240000";
     };
     
     reserved-memory {
@@ -440,7 +440,7 @@
 			       "MSDC0_D2", "MSDC0_D3", "MSDC0_D4",
 			       "MSDC0_D5", "MSDC0_D6", "MSDC0_D7";
 			input-enable;
-            drive-strength = <6>;
+            drive-strength = <2>;
 			bias-pull-up;
             bootph-all;
 		};
@@ -448,21 +448,21 @@
 		conf-clk {
 			pins = "MSDC0_CLK";
 			bias-pull-down;
-            drive-strength = <6>;
+            drive-strength = <2>;
             bootph-all;
 		};
 
 		conf-ds {
 			pins = "MSDC0_DSL";
 			bias-pull-down;
-            drive-strength = <6>;
+            drive-strength = <2>;
             bootph-all;
 		};
 
 		conf-rst {
 			pins = "MSDC0_RSTB";
 			bias-pull-up;
-            drive-strength = <6>;
+            drive-strength = <2>;
             bootph-all;
 		};
 	};
@@ -478,7 +478,7 @@
 			pins = "MSDC1_DAT0", "MSDC1_DAT1", "MSDC1_DAT2",
 			       "MSDC1_DAT3", "MSDC1_CMD";
 			input-enable;
-            drive-strength = <6>;
+            drive-strength = <2>;
 			bias-pull-up;
             bootph-all;
 		};
@@ -486,7 +486,7 @@
 		conf-clk {
 			pins = "MSDC1_CLK";
 			bias-pull-down;
-            drive-strength = <6>;
+            drive-strength = <2>;
             bootph-all;
 		};
 
