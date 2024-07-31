@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-#include <common.h>
 #include <linux/bitops.h>
 #include <linux/delay.h>
 #include "pll.h"

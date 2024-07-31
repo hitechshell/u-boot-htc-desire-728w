@@ -2,7 +2,6 @@
 
 #define LOG_CATEGORY UCLASS_PWRAP
 
-#include <common.h>
 #include <dm.h>
 #include <errno.h>
 #include <pwrap/pwrap.h>

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 
 #include <dm.h>
-#include <common.h>
 #include <mmc.h>
 #include <init.h>
 #include <wdt.h>

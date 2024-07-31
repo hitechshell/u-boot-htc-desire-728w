@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <linux/bitops.h>
-#include <common.h>
 #include <dm.h>
 #include <dm/device_compat.h>
 #include <asm/io.h>
