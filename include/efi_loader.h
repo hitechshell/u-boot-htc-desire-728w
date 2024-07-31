@@ -21,16 +21,6 @@
 struct blk_desc;
 struct jmp_buf_data;
 
-static inline int guidcmp(const void *g1, const void *g2)
-{
-	return memcmp(g1, g2, sizeof(efi_guid_t));
-}
-
-static inline void *guidcpy(void *dst, const void *src)
-{
-	return memcpy(dst, src, sizeof(efi_guid_t));
-}
-
 #if CONFIG_IS_ENABLED(EFI_LOADER)
 
 /**
@@ -162,7 +152,6 @@ static inline void efi_set_bootdev(const char *dev, const char *devnr,
 #define U_BOOT_EFI_RT_VAR_FILE_GUID \
 	EFI_GUID(0xb2ac5fc9, 0x92b7, 0x4acd, \
 		 0xae, 0xac, 0x11, 0xe8, 0x18, 0xc3, 0x13, 0x0c)
-
 
 /* Use internal device tree when starting UEFI application */
 #define EFI_FDT_USE_INTERNAL NULL
@@ -1205,6 +1194,6 @@ efi_status_t efi_load_option_dp_join(struct efi_device_path **dp,
 
 int efi_get_distro_fdt_name(char *fname, int size, int seq);
 
-void efi_load_distro_fdt(void **fdt, efi_uintn_t *fdt_size);
+void efi_load_distro_fdt(efi_handle_t handle, void **fdt, efi_uintn_t *fdt_size);
 
 #endif /* _EFI_LOADER_H */
