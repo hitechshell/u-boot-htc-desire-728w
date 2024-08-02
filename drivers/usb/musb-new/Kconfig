@@ -58,6 +58,15 @@ config USB_MUSB_MT85XX
 	  DMA controllers are ignored. This driver follow musb-new
 	  driver and usb gadget framework.
 
+config USB_MUSB_MTK
+	bool "Enable Mediatek MTK DRC USB controller"
+	depends on ARCH_MEDIATEK
+	help
+	  Say y to enable Mediatek generic USB DRC controller support
+	  if it is available on your Mediatek MUSB IP based platform.
+	  DMA controllers are ignored. This driver follow musb-new
+	  driver and usb gadget framework.
+
 config USB_MUSB_PIC32
 	bool "Enable Microchip PIC32 DRC USB controller"
 	depends on MACH_PIC32
