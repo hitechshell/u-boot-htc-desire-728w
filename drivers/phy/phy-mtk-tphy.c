@@ -607,6 +607,32 @@ static void phy_parse_property(struct mtk_tphy *tphy,
 		instance->discth, instance->pre_emphasis);
 }
 
+
+static void u2_phy_instance_set_mode(struct mtk_tphy *tphy,
+									 struct mtk_phy_instance *instance,
+									 enum phy_mode mode)
+{
+	struct u2phy_banks *u2_banks = &instance->u2_banks;
+	u32 tmp;
+
+	tmp = readl(u2_banks->com + U3P_U2PHYDTM1);
+	switch (mode) {
+		case PHY_MODE_USB_DEVICE:
+			tmp |= P2C_FORCE_IDDIG | P2C_RG_IDDIG;
+			break;
+		case PHY_MODE_USB_HOST:
+			tmp |= P2C_FORCE_IDDIG;
+			tmp &= ~P2C_RG_IDDIG;
+			break;
+		case PHY_MODE_USB_OTG:
+			tmp &= ~(P2C_FORCE_IDDIG | P2C_RG_IDDIG);
+			break;
+		default:
+			return;
+	}
+	writel(tmp, u2_banks->com + U3P_U2PHYDTM1);
+}
+
 static void u2_phy_props_set(struct mtk_tphy *tphy,
 			     struct mtk_phy_instance *instance)
 {
@@ -769,6 +795,18 @@ static int mtk_phy_exit(struct phy *phy)
 	return 0;
 }
 
+static int mtk_phy_set_mode(struct phy *phy, enum phy_mode mode, int submode)
+{
+	struct mtk_tphy *tphy = dev_get_priv(phy->dev);
+	struct mtk_phy_instance *instance = tphy->phys[phy->id];
+
+	if (instance->type == PHY_TYPE_USB2)
+		u2_phy_instance_set_mode(tphy, instance, mode);
+
+	return 0;
+
+}
+
 static int mtk_phy_xlate(struct phy *phy,
 			 struct ofnode_phandle_args *args)
 {
@@ -832,6 +870,7 @@ static const struct phy_ops mtk_tphy_ops = {
 	.power_on	= mtk_phy_power_on,
 	.power_off	= mtk_phy_power_off,
 	.of_xlate	= mtk_phy_xlate,
+	.set_mode 	= mtk_phy_set_mode,
 };
 
 static int mtk_tphy_probe(struct udevice *dev)
