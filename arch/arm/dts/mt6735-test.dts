@@ -638,7 +638,7 @@
 	status = "okay";
 };
 
-&usb0 {
+&usb2 {
 	status = "okay";
 	vbus-supply = <&vusb33>;
 	pinctrl-names = "otg", "host";
@@ -651,4 +651,14 @@
 		label = "USB-B";
 	};
 };
+
+&usb2phy {
+	status = "okay";
+
+	vusb33-supply = <&vusb33>;
+};
+
+// &usb2port0 {
+// 	vcc-supply = <&vusb33>;
+// };
 

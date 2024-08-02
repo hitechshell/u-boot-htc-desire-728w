@@ -203,29 +203,56 @@
 		clock-names = "source", "hclk";
 	};
 
-	usb0: usb@11200000 {
-		compatible = "mediatek,mt6735-musb";
+	usb2: usb@11200000 {
+		compatible = "mediatek,mt6735-musb", "mediatek,mtk-musb";
 		reg = <0x11200000 0x1000>;
 		interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_LOW>;
 		interrupt-names = "mc";
-		clocks = <&pericfg CLK_PERI_USB0>;
-		clock-names = "usb";
-		phys = <&u2port0 PHY_TYPE_USB2>;
+		clocks = <&pericfg CLK_PERI_USB0>,
+			<&system_clk>,
+			<&topckgen CLK_TOP_UNIVPLL_D26>;
+		clock-names = "usb", "usbmcu", "usbpll";
+
+		phys = <&usb2port0 PHY_TYPE_USB2>;
 		phy-names = "usb";
+		status = "disabled";
 	};
 
-	u2phy0: usb-phy@11210000 {
-		compatible = "mediatek,generic-tphy-v1";
-		ranges;
-		#address-cells= <1>;
-		#size-cells = <1>;
+	usb2phy: phy@11210000 {
+		compatible = "mediatek,mt6735-tphy", "mediatek,generic-tphy-v1";
 		reg = <0x11210000 0x800>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
 
-		u2port0: usb-phy@11210800 {
+		status = "disabled";
+
+		usb2port0: usb-phy@11210800 {
 			reg = <0x11210800 0x100>;
-			clocks = <&topckgen CLK_TOP_USB_PHY48M>;
-			#phy-cells = <1>;
+			clocks = <&pericfg CLK_PERI_USB0>;
 			clock-names = "ref";
+			#phy-cells = <1>;
+		};
+
+		usb2port1: usb-phy@11210900 {
+			reg = <0x11210900 0x100>;
+			clocks = <&pericfg CLK_PERI_USB0>;
+			clock-names = "ref";
+			#phy-cells = <1>;
+		};
+
+		usb2port2: usb-phy@11210a00 {
+			reg = <0x11210a00 0x100>;
+			clocks = <&pericfg CLK_PERI_USB0>;
+			clock-names = "ref";
+			#phy-cells = <1>;
+		};
+
+		usb2port3: usb-phy@11210b00 {
+			reg = <0 0x11210b00 0 0x100>;
+			clocks = <&pericfg CLK_PERI_USB0>;
+			clock-names = "ref";
+			#phy-cells = <1>;
 		};
 	};
 
