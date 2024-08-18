@@ -632,6 +632,9 @@ static void u2_phy_instance_set_mode(struct mtk_tphy *tphy,
 			return;
 	}
 	writel(tmp, u2_banks->com + U3P_U2PHYDTM1);
+	if (mode == PHY_MODE_USB_DEVICE)
+		setbits_le32(u2_banks->com + U3P_U2PHYDTM1, P2C_FORCE_ENTER_DEVICE_MODE);
+
 }
 
 static void u2_phy_props_set(struct mtk_tphy *tphy,
