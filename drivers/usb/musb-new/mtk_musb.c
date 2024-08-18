@@ -14,6 +14,7 @@
 #include <dm/device_compat.h>
 #include <dm/lists.h>
 #include <dm/root.h>
+#include <dm/pinctrl.h>
 #include <linux/delay.h>
 #include <linux/printk.h>
 #include <linux/usb/musb.h>
@@ -79,7 +80,7 @@ static int mtk_musb_enable(struct musb *musb)
 	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
 	int ret;
 
-	DBG_I("%s():\n", __func__);
+	printf("%s():\n", __func__);
 
 	musb_ep_select(musb->mregs, 0);
 	musb_writeb(musb->mregs, MUSB_FADDR, 0);
@@ -103,7 +104,7 @@ static void mtk_musb_disable(struct musb *musb)
 	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
 	int ret;
 
-	DBG_I("%s():\n", __func__);
+	printf("%s():\n", __func__);
 
 	if (!enabled)
 		return;
@@ -124,7 +125,7 @@ static int mtk_musb_init(struct musb *musb)
 	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
 	int ret;
 
-	DBG_I("%s():\n", __func__);
+	printf("%s():\n", __func__);
 
 	ret = clk_enable(&glue->usbpllclk);
 	if (ret) {
@@ -219,7 +220,7 @@ static int musb_usb_probe(struct udevice *dev)
 	void *base = dev_read_addr_ptr(dev);
 	int ret;
 
-	DBG_I("%s():\n", __func__);
+	printf("%s():\n", __func__);
 
 #ifdef CONFIG_USB_MUSB_HOST
 	struct usb_bus_priv *priv = dev_get_uclass_priv(dev);
@@ -259,6 +260,12 @@ static int musb_usb_probe(struct udevice *dev)
 		debug("can't get vusb33 regulator %d!\n", ret);
 	}
 
+	ret = generic_phy_power_on(&glue->phy);
+	if (ret) {
+		pr_debug("failed to power on USB PHY\n");
+		return ret;
+	}
+
 	memset(&pdata, 0, sizeof(pdata));
 	pdata.power = (u8)400;
 	pdata.platform_ops = &mtk_musb_ops;
@@ -266,7 +273,7 @@ static int musb_usb_probe(struct udevice *dev)
 
 #ifdef CONFIG_USB_MUSB_HOST
 	priv->desc_before_addr = true;
-
+	pinctrl_select_state(dev, "host");
 	pdata.mode = MUSB_HOST;
 	host->host = musb_init_controller(&pdata, &glue->dev, base);
 	if (!host->host)
@@ -276,19 +283,15 @@ static int musb_usb_probe(struct udevice *dev)
 	if (!ret)
 		printf("MTK MUSB OTG (Host)\n");
 #else
+	pinctrl_select_state(dev, "peripheral");
 	pdata.mode = MUSB_PERIPHERAL;
-	host->host = musb_register(&pdata, &glue->dev, base);
+	host->host = musb_init_controller(&pdata, &glue->dev, base);
 	if (!host->host)
 		return -EIO;
 
 	printf("MTK MUSB OTG (Peripheral)\n");
+	return usb_add_gadget_udc(&glue->dev, &host->host->g);
 #endif
-
-	ret = generic_phy_power_on(&glue->phy);
-	if (ret) {
-		pr_debug("failed to power on USB PHY\n");
-		return ret;
-	}
 
 	return ret;
 }
