@@ -204,7 +204,7 @@
 	};
 
 	usb2: usb@11200000 {
-		compatible = "mediatek,mt6735-musb", "mediatek,mtk-musb";
+		compatible = "mediatek,mtk-musb";
 		reg = <0x11200000 0x1000>;
 		interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_LOW>;
 		interrupt-names = "mc";
@@ -212,7 +212,6 @@
 			<&system_clk>,
 			<&topckgen CLK_TOP_UNIVPLL_D26>;
 		clock-names = "usb", "usbmcu", "usbpll";
-
 		phys = <&usb2port0 PHY_TYPE_USB2>;
 		phy-names = "usb";
 		status = "disabled";
@@ -229,27 +228,6 @@
 
 		usb2port0: usb-phy@11210800 {
 			reg = <0x11210800 0x100>;
-			clocks = <&pericfg CLK_PERI_USB0>;
-			clock-names = "ref";
-			#phy-cells = <1>;
-		};
-
-		usb2port1: usb-phy@11210900 {
-			reg = <0x11210900 0x100>;
-			clocks = <&pericfg CLK_PERI_USB0>;
-			clock-names = "ref";
-			#phy-cells = <1>;
-		};
-
-		usb2port2: usb-phy@11210a00 {
-			reg = <0x11210a00 0x100>;
-			clocks = <&pericfg CLK_PERI_USB0>;
-			clock-names = "ref";
-			#phy-cells = <1>;
-		};
-
-		usb2port3: usb-phy@11210b00 {
-			reg = <0 0x11210b00 0 0x100>;
 			clocks = <&pericfg CLK_PERI_USB0>;
 			clock-names = "ref";
 			#phy-cells = <1>;
