@@ -25,8 +25,16 @@
 #include "musb_core.h"
 #include "musb_uboot.h"
 
-#define DBG_I(fmt, ...) \
-	pr_info(fmt, ##__VA_ARGS__)
+#define PWR_ENABLE_SUSPENDM  (1<<0)
+#define PWR_SOFT_CONN        (1<<6)
+#define PWR_HS_ENAB          (1<<5)
+
+#define USB_L1INTS			0x00a0
+#define USB_L1INTM			0x00a4
+
+#define TX_INT_STATUS		BIT(0)
+#define RX_INT_STATUS		BIT(1)
+#define USBCOM_INT_STATUS	BIT(2)
 
 struct mtk_musb_config {
 	struct musb_hdrc_config *config;
@@ -49,28 +57,50 @@ struct mtk_musb_glue {
  * MUSB Glue code
  ******************************************************************************/
 
-static irqreturn_t mtk_musb_interrupt(int irq, void *__hci)
+static irqreturn_t generic_interrupt(int irq, void *__hci)
 {
-	struct musb		*musb = __hci;
-	irqreturn_t		retval = IRQ_NONE;
+	unsigned long flags;
+	irqreturn_t retval = IRQ_NONE;
+	struct musb *musb = __hci;
 
-	/* read and flush interrupts */
-	musb->int_usb = musb_readb(musb->mregs, MUSB_INTRUSB);
-//	last_int_usb = musb->int_usb;
-	if (musb->int_usb)
-		musb_writeb(musb->mregs, MUSB_INTRUSB, musb->int_usb);
-	musb->int_tx = musb_readw(musb->mregs, MUSB_INTRTX);
-	if (musb->int_tx)
-		musb_writew(musb->mregs, MUSB_INTRTX, musb->int_tx);
-	musb->int_rx = musb_readw(musb->mregs, MUSB_INTRRX);
-	if (musb->int_rx)
-		musb_writew(musb->mregs, MUSB_INTRRX, musb->int_rx);
+	spin_lock_irqsave(&musb->lock, flags);
+	musb->int_usb = musb_clearb(musb->mregs, MUSB_INTRUSB);
+	musb->int_rx = musb_clearw(musb->mregs, MUSB_INTRRX);
+	musb->int_tx = musb_clearw(musb->mregs, MUSB_INTRTX);
+
+	if ((musb->int_usb & MUSB_INTR_RESET) && !is_host_active(musb)) {
+		/* ep0 FADDR must be 0 when (re)entering peripheral mode */
+		musb_ep_select(musb->mregs, 0);
+		musb_writeb(musb->mregs, MUSB_FADDR, 0);
+	}
 
 	if (musb->int_usb || musb->int_tx || musb->int_rx)
-		retval |= musb_interrupt(musb);
+		retval = musb_interrupt(musb);
+
+	spin_unlock_irqrestore(&musb->lock, flags);
 
 	return retval;
 }
+
+static irqreturn_t mtk_musb_interrupt(int irq, void *dev_id)
+{
+	irqreturn_t retval = IRQ_NONE;
+	struct musb *musb = (struct musb *)dev_id;
+	u32 l1_ints;
+
+	l1_ints = musb_readl(musb->mregs, USB_L1INTS) &
+	musb_readl(musb->mregs, USB_L1INTM);
+
+	if (l1_ints & (TX_INT_STATUS | RX_INT_STATUS | USBCOM_INT_STATUS))
+		retval = generic_interrupt(irq, musb);
+
+	#if defined(CONFIG_USB_INVENTRA_DMA)
+	if (l1_ints & DMA_INT_STATUS)
+		retval = dma_controller_irq(irq, musb->dma_controller);
+	#endif
+	return retval;
+}
+
 
 /* musb_core does not call enable / disable in a balanced manner <sigh> */
 static bool enabled;
@@ -124,6 +154,7 @@ static int mtk_musb_init(struct musb *musb)
 {
 	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
 	int ret;
+	u8 temp;
 
 	printf("%s():\n", __func__);
 
@@ -151,6 +182,13 @@ static int mtk_musb_init(struct musb *musb)
 
 	musb->isr = mtk_musb_interrupt;
 
+	/* turning on the USB core cuz musb_core wouldn't */
+	tmp = musb_readb(musb->mregs, 0x1);
+	tmp |= PWR_SOFT_CONN;
+	tmp |= PWR_ENABLE_SUSPENDM;
+	tmp |= PWR_HS_ENAB;
+	musb_writeb(musb->mregs, 0x1, tmp);
+
 	return 0;
 }
 
@@ -158,6 +196,12 @@ static int mtk_musb_exit(struct musb *musb)
 {
 	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
 	int ret;
+	u8 temp;
+
+	/* turning off the USB core cuz the musb_core wouldn't */
+	tmp = musb_readb(musb->mregs, 0x1);
+	tmp &= ~PWR_SOFT_CONN;
+	musb_writeb(musb->mreg, 0x1, tmp);
 
 	if (generic_phy_valid(&glue->phy)) {
 		ret = generic_phy_exit(&glue->phy);
@@ -187,20 +231,21 @@ static const struct musb_platform_ops mtk_musb_ops = {
 #define MTK_MUSB_RAM_BITS		16
 
 static struct musb_fifo_cfg mtk_musb_mode_cfg[] = {
-	MUSB_EP_FIFO_SINGLE(1, FIFO_TX, 512),
-	MUSB_EP_FIFO_SINGLE(1, FIFO_RX, 512),
-	MUSB_EP_FIFO_SINGLE(2, FIFO_TX, 512),
-	MUSB_EP_FIFO_SINGLE(2, FIFO_RX, 512),
-	MUSB_EP_FIFO_SINGLE(3, FIFO_TX, 512),
-	MUSB_EP_FIFO_SINGLE(3, FIFO_RX, 512),
-	MUSB_EP_FIFO_SINGLE(4, FIFO_TX, 512),
-	MUSB_EP_FIFO_SINGLE(4, FIFO_RX, 512),
-	MUSB_EP_FIFO_SINGLE(5, FIFO_TX, 512),
-	MUSB_EP_FIFO_SINGLE(5, FIFO_RX, 512),
-	MUSB_EP_FIFO_SINGLE(6, FIFO_TX, 512),
-	MUSB_EP_FIFO_SINGLE(6, FIFO_RX, 512),
-	MUSB_EP_FIFO_SINGLE(7, FIFO_TX, 512),
-	MUSB_EP_FIFO_SINGLE(7, FIFO_RX, 512),
+	{ .hw_ep_num = 1, .style = FIFO_TX, .maxpacket = 512, },
+	{ .hw_ep_num = 1, .style = FIFO_RX, .maxpacket = 512, },
+	{ .hw_ep_num = 2, .style = FIFO_TX, .maxpacket = 512, },
+	{ .hw_ep_num = 2, .style = FIFO_RX, .maxpacket = 512, },
+	{ .hw_ep_num = 3, .style = FIFO_TX, .maxpacket = 512, },
+	{ .hw_ep_num = 3, .style = FIFO_RX, .maxpacket = 512, },
+	{ .hw_ep_num = 4, .style = FIFO_TX, .maxpacket = 512, },
+	{ .hw_ep_num = 4, .style = FIFO_RX, .maxpacket = 512, },
+	{ .hw_ep_num = 5, .style = FIFO_TX, .maxpacket = 512, },
+	{ .hw_ep_num = 5, .style = FIFO_RX, .maxpacket = 512, },
+	{ .hw_ep_num = 6, .style = FIFO_TX, .maxpacket = 1024, },
+	{ .hw_ep_num = 6, .style = FIFO_RX, .maxpacket = 1024, },
+	{ .hw_ep_num = 7, .style = FIFO_TX, .maxpacket = 512, },
+	{ .hw_ep_num = 7, .style = FIFO_RX, .maxpacket = 64, },
+
 };
 
 static struct musb_hdrc_config musb_config = {
@@ -282,13 +327,32 @@ static int musb_usb_probe(struct udevice *dev)
 	ret = musb_lowlevel_init(host);
 	if (!ret)
 		printf("MTK MUSB OTG (Host)\n");
+
+	ret = generic_phy_set_mode(&glue->phy, PHY_MODE_USB_HOST, 0);
+	if (ret) {
+		printf("Setting USB PHY Host mode failed with error %d\n", ret);
+		return ret;
+	}
+
+	devctl |= MUSB_DEVCTL_SESSION;
+	musb_writeb(musb->mregs, MUSB_DEVCTL, devctl);
+	MUSB_HST_MODE(musb);
 #else
+
 	pinctrl_select_state(dev, "peripheral");
 	pdata.mode = MUSB_PERIPHERAL;
 	host->host = musb_init_controller(&pdata, &glue->dev, base);
 	if (!host->host)
 		return -EIO;
 
+
+	devctl &= ~MUSB_DEVCTL_SESSION;
+	musb_writeb(musb->mregs, MUSB_DEVCTL, devctl);
+	ret = generic_phy_set_mode(&glue->phy, PHY_MODE_USB_DEVICE, 0);
+	if (ret) {
+		printf("Setting USB PHY Peripheral mode failed with error %d\n", ret);
+		return ret;
+	}
 	printf("MTK MUSB OTG (Peripheral)\n");
 	return usb_add_gadget_udc(&glue->dev, &host->host->g);
 #endif
