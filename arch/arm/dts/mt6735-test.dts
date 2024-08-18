@@ -170,7 +170,7 @@
                         bootph-all;
 				};
                 
-			vusb33: ldo_vusb33 {
+			vusb33: fixed_ldo_vusb33 {
 						regulator-name = "ldo_vusb33";
 						regulator-min-microvolt = <3300000>;
 						regulator-max-microvolt = <3300000>;
@@ -641,7 +641,7 @@
 &usb2 {
 	status = "okay";
 	vbus-supply = <&vusb33>;
-	pinctrl-names = "otg", "host";
+	pinctrl-names = "peripheral", "host";
 	pinctrl-0 = <&usb_pins_b>;
 	pinctrl-1 = <&usb_pins_a>;
 	dr_mode = "peripheral";
@@ -654,11 +654,11 @@
 
 &usb2phy {
 	status = "okay";
-
 	vusb33-supply = <&vusb33>;
 };
 
-// &usb2port0 {
-// 	vcc-supply = <&vusb33>;
-// };
+&usb2port0 {
+	status = "okay";
+ 	vcc-supply = <&vusb33>;
+};
 

@@ -209,7 +209,7 @@
 		interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_LOW>;
 		interrupt-names = "mc";
 		clocks = <&pericfg CLK_PERI_USB0>,
-			<&system_clk>,
+			<&topckgen CLK_TOP_MUX_USB20>,
 			<&topckgen CLK_TOP_UNIVPLL_D26>;
 		clock-names = "usb", "usbmcu", "usbpll";
 		phys = <&usb2port0 PHY_TYPE_USB2>;
@@ -228,7 +228,7 @@
 
 		usb2port0: usb-phy@11210800 {
 			reg = <0x11210800 0x100>;
-			clocks = <&pericfg CLK_PERI_USB0>;
+			clocks = <&topckgen CLK_TOP_USB_PHY48M>;
 			clock-names = "ref";
 			#phy-cells = <1>;
 		};
