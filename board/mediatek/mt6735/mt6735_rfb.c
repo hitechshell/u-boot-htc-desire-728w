@@ -4,12 +4,12 @@
 #include <mmc.h>
 #include <init.h>
 #include <wdt.h>
+#include <generic-phy.h>
 #include <asm/io.h>
 #include <asm/global_data.h>
 #include <linux/delay.h>
 #include <configs/mt6735.h>
-#include <pwrap/pwrap.h>
-#include "mt6735_pwrap_hal.h"
+#include <power/pmic.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -45,21 +45,36 @@ int mmc_get_env_dev(void)
 #endif
 
 #ifdef CONFIG_USB_MUSB_GADGET
-int board_late_init(void)
+int g_dnl_board_usb_cable_connected(void)
 {
 	struct udevice *dev;
-	int ret;
+	int ret, val;
 
-	if (CONFIG_IS_ENABLED(USB_GADGET)) {
-		ret = uclass_get_device(UCLASS_USB_GADGET_GENERIC, 0, &dev);
-		if (ret) {
-			pr_err("%s: Cannot find USB device\n", __func__);
-			return ret;
-		}
+	ret = uclass_get_device(UCLASS_PWRAP, 0, &dev);
+	if (ret) {
+		pr_err("%s: Cannot find PWRAP device\n", __func__);
+		return ret;
 	}
 
-	return 0;
+	ret = uclass_get_device(UCLASS_PMIC, 0, &dev);
+	if (ret) {
+		pr_err("%s: Cannot find pmic device\n", __func__);
+		return ret;
+	}
+
+	pmic_read_u32(dev, 0x0f48, &val);
+	printf("PMIC CHR REG read value 0x%x\n", val);
+	ret = (((val) & (0x1 << 5)) >> 5);
+	if (ret == 1) {
+		printf("pmic usb detected, %d\n", ret);
+		return ret;
+	} else {
+		printf("pmic failed to detect USB\n");
+	}
+
+	return ret; /* Should return 1 on normal cases */
 }
+
 #endif
 
 
