@@ -64,9 +64,9 @@ static irqreturn_t generic_interrupt(int irq, void *__hci)
 	struct musb *musb = __hci;
 
 	spin_lock_irqsave(&musb->lock, flags);
-	musb->int_usb = musb_clearb(musb->mregs, MUSB_INTRUSB);
-	musb->int_rx = musb_clearw(musb->mregs, MUSB_INTRRX);
-	musb->int_tx = musb_clearw(musb->mregs, MUSB_INTRTX);
+	musb->int_usb = musb_readb(musb->mregs, MUSB_INTRUSB);
+	musb->int_rx = musb_readw(musb->mregs, MUSB_INTRRX);
+	musb->int_tx = musb_readw(musb->mregs, MUSB_INTRTX);
 
 	if ((musb->int_usb & MUSB_INTR_RESET) && !is_host_active(musb)) {
 		/* ep0 FADDR must be 0 when (re)entering peripheral mode */
@@ -154,7 +154,7 @@ static int mtk_musb_init(struct musb *musb)
 {
 	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
 	int ret;
-	u8 temp;
+	u8 tmp;
 
 	printf("%s():\n", __func__);
 
@@ -196,12 +196,12 @@ static int mtk_musb_exit(struct musb *musb)
 {
 	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
 	int ret;
-	u8 temp;
+	u8 tmp;
 
 	/* turning off the USB core cuz the musb_core wouldn't */
 	tmp = musb_readb(musb->mregs, 0x1);
 	tmp &= ~PWR_SOFT_CONN;
-	musb_writeb(musb->mreg, 0x1, tmp);
+	musb_writeb(musb->mregs, 0x1, tmp);
 
 	if (generic_phy_valid(&glue->phy)) {
 		ret = generic_phy_exit(&glue->phy);
@@ -333,9 +333,6 @@ static int musb_usb_probe(struct udevice *dev)
 		printf("Setting USB PHY Host mode failed with error %d\n", ret);
 		return ret;
 	}
-
-	devctl |= MUSB_DEVCTL_SESSION;
-	musb_writeb(musb->mregs, MUSB_DEVCTL, devctl);
 	MUSB_HST_MODE(musb);
 #else
 
@@ -345,9 +342,6 @@ static int musb_usb_probe(struct udevice *dev)
 	if (!host->host)
 		return -EIO;
 
-
-	devctl &= ~MUSB_DEVCTL_SESSION;
-	musb_writeb(musb->mregs, MUSB_DEVCTL, devctl);
 	ret = generic_phy_set_mode(&glue->phy, PHY_MODE_USB_DEVICE, 0);
 	if (ret) {
 		printf("Setting USB PHY Peripheral mode failed with error %d\n", ret);
