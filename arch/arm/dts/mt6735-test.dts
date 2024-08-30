@@ -171,7 +171,7 @@
 				};
                 
 			vusb33: fixed_ldo_vusb33 {
-						regulator-name = "ldo_vusb33";
+						regulator-name = "fixed_ldo_vusb33";
 						regulator-min-microvolt = <3300000>;
 						regulator-max-microvolt = <3300000>;
 						regulator-enable-ramp-delay = <264>;
@@ -640,7 +640,8 @@
 
 &usb2 {
 	status = "okay";
-	vbus-supply = <&vusb33>;
+	vusb33-supply = <&vusb33>;
+	vcore-supply = <&vcore1>;
 	pinctrl-names = "peripheral", "host";
 	pinctrl-0 = <&usb_pins_b>;
 	pinctrl-1 = <&usb_pins_a>;
