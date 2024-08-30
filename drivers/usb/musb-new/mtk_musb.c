@@ -48,6 +48,7 @@ struct mtk_musb_glue {
 	struct mtk_musb_config *cfg;
 	struct device dev;
 	struct udevice *vusb33_supply;
+	struct udevice *vcore_supply;
 	struct phy phy;
 };
 
@@ -109,6 +110,7 @@ static int mtk_musb_enable(struct musb *musb)
 {
 	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
 	int ret;
+	u8 tmp, flags;
 
 	printf("%s():\n", __func__);
 
@@ -118,12 +120,28 @@ static int mtk_musb_enable(struct musb *musb)
 	if (enabled)
 		return 0;
 
+
+	regulator_set_enable(glue->vusb33_supply, true);
+	regulator_set_enable(glue->vcore_supply, true);
+	regulator_set_value(glue->vcore_supply, 1150000);
+
+	flags = musb_readl(musb->mregs, USB_L1INTM);
+
+	mdelay(10);
 	ret = generic_phy_power_on(&glue->phy);
 	if (ret) {
 		pr_debug("failed to power on USB PHY\n");
 		return ret;
 	}
-	regulator_set_enable(glue->vusb33_supply, true);
+	/* turning on the USB core cuz musb_core wouldn't */
+	tmp = musb_readb(musb->mregs, 0x1);
+	tmp |= PWR_SOFT_CONN;
+	tmp |= PWR_ENABLE_SUSPENDM;
+	tmp |= PWR_HS_ENAB;
+	musb_writeb(musb->mregs, 0x1, tmp);
+
+	musb_writel(musb->mregs, USB_L1INTM, flags);
+
 	enabled = true;
 
 	return 0;
@@ -147,6 +165,7 @@ static void mtk_musb_disable(struct musb *musb)
 		}
 	}
 
+	regulator_set_enable(glue->vusb33_supply, false);
 	enabled = false;
 }
 
@@ -182,12 +201,6 @@ static int mtk_musb_init(struct musb *musb)
 
 	musb->isr = mtk_musb_interrupt;
 
-	/* turning on the USB core cuz musb_core wouldn't */
-	tmp = musb_readb(musb->mregs, 0x1);
-	tmp |= PWR_SOFT_CONN;
-	tmp |= PWR_ENABLE_SUSPENDM;
-	tmp |= PWR_HS_ENAB;
-	musb_writeb(musb->mregs, 0x1, tmp);
 
 	return 0;
 }
@@ -231,20 +244,20 @@ static const struct musb_platform_ops mtk_musb_ops = {
 #define MTK_MUSB_RAM_BITS		16
 
 static struct musb_fifo_cfg mtk_musb_mode_cfg[] = {
-	{ .hw_ep_num = 1, .style = FIFO_TX, .maxpacket = 512, },
-	{ .hw_ep_num = 1, .style = FIFO_RX, .maxpacket = 512, },
-	{ .hw_ep_num = 2, .style = FIFO_TX, .maxpacket = 512, },
-	{ .hw_ep_num = 2, .style = FIFO_RX, .maxpacket = 512, },
-	{ .hw_ep_num = 3, .style = FIFO_TX, .maxpacket = 512, },
-	{ .hw_ep_num = 3, .style = FIFO_RX, .maxpacket = 512, },
-	{ .hw_ep_num = 4, .style = FIFO_TX, .maxpacket = 512, },
-	{ .hw_ep_num = 4, .style = FIFO_RX, .maxpacket = 512, },
-	{ .hw_ep_num = 5, .style = FIFO_TX, .maxpacket = 512, },
-	{ .hw_ep_num = 5, .style = FIFO_RX, .maxpacket = 512, },
-	{ .hw_ep_num = 6, .style = FIFO_TX, .maxpacket = 1024, },
-	{ .hw_ep_num = 6, .style = FIFO_RX, .maxpacket = 1024, },
-	{ .hw_ep_num = 7, .style = FIFO_TX, .maxpacket = 512, },
-	{ .hw_ep_num = 7, .style = FIFO_RX, .maxpacket = 64, },
+	MUSB_EP_FIFO_SINGLE(1, FIFO_TX, 512),
+	MUSB_EP_FIFO_SINGLE(1, FIFO_RX, 512),
+	MUSB_EP_FIFO_SINGLE(2, FIFO_TX, 512),
+	MUSB_EP_FIFO_SINGLE(2, FIFO_RX, 512),
+	MUSB_EP_FIFO_SINGLE(3, FIFO_TX, 512),
+	MUSB_EP_FIFO_SINGLE(3, FIFO_RX, 512),
+	MUSB_EP_FIFO_SINGLE(4, FIFO_TX, 512),
+	MUSB_EP_FIFO_SINGLE(4, FIFO_RX, 512),
+	MUSB_EP_FIFO_SINGLE(5, FIFO_TX, 512),
+	MUSB_EP_FIFO_SINGLE(5, FIFO_RX, 512),
+	MUSB_EP_FIFO_SINGLE(6, FIFO_TX, 512),
+	MUSB_EP_FIFO_SINGLE(6, FIFO_RX, 512),
+	MUSB_EP_FIFO_SINGLE(7, FIFO_TX, 512),
+	MUSB_EP_FIFO_SINGLE(7, FIFO_RX, 512),
 
 };
 
@@ -305,6 +318,13 @@ static int musb_usb_probe(struct udevice *dev)
 		debug("can't get vusb33 regulator %d!\n", ret);
 	}
 
+
+	ret = device_get_supply_regulator(dev, "vcore-supply",
+									  &glue->vcore_supply);
+	if (ret) {
+		debug("can't get vcore regulator %d!\n", ret);
+	}
+
 	ret = generic_phy_power_on(&glue->phy);
 	if (ret) {
 		pr_debug("failed to power on USB PHY\n");
@@ -333,7 +353,7 @@ static int musb_usb_probe(struct udevice *dev)
 		printf("Setting USB PHY Host mode failed with error %d\n", ret);
 		return ret;
 	}
-	MUSB_HST_MODE(musb);
+	MUSB_HST_MODE(host->host);
 #else
 
 	pinctrl_select_state(dev, "peripheral");
