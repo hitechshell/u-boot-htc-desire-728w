@@ -32,6 +32,12 @@
 #define USB_L1INTS			0x00a0
 #define USB_L1INTM			0x00a4
 
+#define MUSB_RXTOG		0x80
+#define MUSB_RXTOGEN		0x82
+#define MUSB_TXTOG		0x84
+#define MUSB_TXTOGEN		0x86
+#define MTK_TOGGLE_EN		GENMASK(15, 0)
+
 #define TX_INT_STATUS		BIT(0)
 #define RX_INT_STATUS		BIT(1)
 #define USBCOM_INT_STATUS	BIT(2)
@@ -50,6 +56,7 @@ struct mtk_musb_glue {
 	struct udevice *vusb33_supply;
 	struct udevice *vcore_supply;
 	struct phy phy;
+	enum phy_mode phy_mode;
 };
 
 #define to_mtk_musb_glue(d)	container_of(d, struct mtk_musb_glue, dev)
@@ -106,6 +113,63 @@ static irqreturn_t mtk_musb_interrupt(int irq, void *dev_id)
 /* musb_core does not call enable / disable in a balanced manner <sigh> */
 static bool enabled;
 
+
+static int mtk_otg_switch_set(struct musb *musb, int role)
+{
+	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
+	u8 devctl = readb(musb->mregs + MUSB_DEVCTL);
+
+	switch (role) {
+	case 1:
+		glue->phy_mode = PHY_MODE_USB_HOST;
+		devctl |= MUSB_DEVCTL_SESSION;
+		musb_writeb(musb->mregs, MUSB_DEVCTL, devctl);
+		MUSB_HST_MODE(musb);
+		break;
+	case 2:
+		glue->phy_mode = PHY_MODE_USB_DEVICE;
+		devctl &= ~MUSB_DEVCTL_SESSION;
+		musb_writeb(musb->mregs, MUSB_DEVCTL, devctl);
+		MUSB_DEV_MODE(musb);
+		break;
+	default:
+		dev_err(musb->controller, "Invalid State\n");
+		return -EINVAL;
+	}
+
+	generic_phy_set_mode(&glue->phy, glue->phy_mode, 0);
+
+	return 0;
+}
+
+static int mtk_musb_set_mode(struct musb *musb, u8 mode)
+{
+	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
+	enum phy_mode new_mode;
+	int new_role;
+
+	switch (mode) {
+	case MUSB_HOST:
+		new_mode = PHY_MODE_USB_HOST;
+		new_role = 1;
+		break;
+	case MUSB_PERIPHERAL:
+		new_mode = PHY_MODE_USB_DEVICE;
+		new_role = 2;
+		break;
+	case MUSB_OTG:
+		new_mode = PHY_MODE_USB_OTG;
+		new_role = 3;
+		break;
+	default:
+		dev_err(musb->controller, "Invalid mode request\n");
+		return -EINVAL;
+	}
+
+	mtk_otg_switch_set(musb, new_role);
+	return 0;
+}
+
 static int mtk_musb_enable(struct musb *musb)
 {
 	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
@@ -128,11 +192,26 @@ static int mtk_musb_enable(struct musb *musb)
 	flags = musb_readl(musb->mregs, USB_L1INTM);
 
 	mdelay(10);
+
+
+	ret = generic_phy_init(&glue->phy);
+	if (ret) {
+		dev_dbg(musb->controller, "failed to init USB PHY\n");
+		return ret;
+	}
+
 	ret = generic_phy_power_on(&glue->phy);
 	if (ret) {
 		pr_debug("failed to power on USB PHY\n");
 		return ret;
 	}
+
+	ret = generic_phy_set_mode(&glue->phy, PHY_MODE_USB_DEVICE, 0);
+	if (ret) {
+		printf("Setting USB PHY Peripheral mode failed with error %d\n", ret);
+		return ret;
+	}
+
 	/* turning on the USB core cuz musb_core wouldn't */
 	tmp = musb_readb(musb->mregs, 0x1);
 	tmp |= PWR_SOFT_CONN;
@@ -177,34 +256,54 @@ static int mtk_musb_init(struct musb *musb)
 
 	printf("%s():\n", __func__);
 
-	ret = clk_enable(&glue->usbpllclk);
-	if (ret) {
-		dev_err(musb->controller, "failed to enable usbpll clock\n");
-		return ret;
-	}
-	ret = clk_enable(&glue->usbmcuclk);
-	if (ret) {
-		dev_err(musb->controller, "failed to enable usbmcu clock\n");
-		return ret;
-	}
-	ret = clk_enable(&glue->usbclk);
-	if (ret) {
-		dev_err(musb->controller, "failed to enable usb clock\n");
-		return ret;
-	}
+	musb->isr = mtk_musb_interrupt;
+	/* Set TX/RX toggle enable */
+	musb_writew(musb->mregs, MUSB_TXTOGEN, MTK_TOGGLE_EN);
+	musb_writew(musb->mregs, MUSB_RXTOGEN, MTK_TOGGLE_EN);
 
 	ret = generic_phy_init(&glue->phy);
-	if (ret) {
-		dev_dbg(musb->controller, "failed to init USB PHY\n");
+	if (ret)
 		return ret;
-	}
 
-	musb->isr = mtk_musb_interrupt;
+	ret = generic_phy_power_on(&glue->phy);
+	if (ret)
+		return ret;
 
+	generic_phy_set_mode(&glue->phy, glue->phy_mode, 0);
 
 	return 0;
 }
 
+static u16 mtk_musb_get_toggle(struct musb_qh *qh, int is_out)
+{
+	struct musb *musb = qh->hw_ep->musb;
+	u8 epnum = qh->hw_ep->epnum;
+	u16 toggle;
+
+	toggle = musb_readw(musb->mregs, is_out ? MUSB_TXTOG : MUSB_RXTOG);
+	return toggle & (1 << epnum);
+}
+
+static u16 mtk_musb_set_toggle(struct musb_qh *qh, int is_out, struct urb *urb)
+{
+	struct musb *musb = qh->hw_ep->musb;
+	u8 epnum = qh->hw_ep->epnum;
+	u16 value, toggle;
+
+	toggle = usb_gettoggle(urb->dev, qh->epnum, is_out);
+
+	if (is_out) {
+		value = musb_readw(musb->mregs, MUSB_TXTOG);
+		value |= toggle << epnum;
+		musb_writew(musb->mregs, MUSB_TXTOG, value);
+	} else {
+		value = musb_readw(musb->mregs, MUSB_RXTOG);
+		value |= toggle << epnum;
+		musb_writew(musb->mregs, MUSB_RXTOG, value);
+	}
+
+	return 0;
+}
 static int mtk_musb_exit(struct musb *musb)
 {
 	struct mtk_musb_glue *glue = to_mtk_musb_glue(musb->controller);
@@ -237,6 +336,9 @@ static const struct musb_platform_ops mtk_musb_ops = {
 	.exit		= mtk_musb_exit,
 	.enable		= mtk_musb_enable,
 	.disable	= mtk_musb_disable,
+	.get_toggle = mtk_musb_get_toggle,
+	.set_toggle = mtk_musb_set_toggle,
+	.set_mode 	= mtk_musb_set_mode,
 };
 
 /* MTK OTG supports up to 7 endpoints */
@@ -306,6 +408,23 @@ static int musb_usb_probe(struct udevice *dev)
 		dev_err(dev, "failed to get usb clock\n");
 		return ret;
 	}
+
+	ret = clk_enable(&glue->usbpllclk);
+	if (ret) {
+		dev_err(dev, "failed to enable usbpll clock\n");
+		return ret;
+	}
+	ret = clk_enable(&glue->usbmcuclk);
+	if (ret) {
+		dev_err(dev, "failed to enable usbmcu clock\n");
+		return ret;
+	}
+	ret = clk_enable(&glue->usbclk);
+	if (ret) {
+		dev_err(dev, "failed to enable usb clock\n");
+		return ret;
+	}
+
 	ret = generic_phy_get_by_name(dev, "usb", &glue->phy);
 	if (ret) {
 		pr_err("failed to get usb PHY\n");
@@ -362,11 +481,6 @@ static int musb_usb_probe(struct udevice *dev)
 	if (!host->host)
 		return -EIO;
 
-	ret = generic_phy_set_mode(&glue->phy, PHY_MODE_USB_DEVICE, 0);
-	if (ret) {
-		printf("Setting USB PHY Peripheral mode failed with error %d\n", ret);
-		return ret;
-	}
 	printf("MTK MUSB OTG (Peripheral)\n");
 	return usb_add_gadget_udc(&glue->dev, &host->host->g);
 #endif

@@ -29,7 +29,8 @@
 struct musb;
 struct musb_hw_ep;
 struct musb_ep;
-
+struct musb_qh;
+struct musb_io;
 /* Helper defines for struct musb->hwvers */
 #define MUSB_HWVERS_MAJOR(x)	((x >> 10) & 0x1f)
 #define MUSB_HWVERS_MINOR(x)	(x & 0x3ff)
@@ -166,13 +167,12 @@ enum musb_g_ep0_state {
 
 /* "flat" mapping: each endpoint has its own i/o address */
 #elif	defined(MUSB_FLAT_REG)
-#define musb_ep_select(_mbase, _epnum)	(((void)(_mbase)), ((void)(_epnum)))
+#define musb_ep_select(_mbase, _epnum)	musb->io.ep_select((_mbase), (_epnum))
 #define	MUSB_EP_OFFSET			MUSB_FLAT_OFFSET
 
 /* "indexed" mapping: INDEX register controls register bank select */
 #else
-#define musb_ep_select(_mbase, _epnum) \
-	musb_writeb((_mbase), MUSB_INDEX, (_epnum))
+#define musb_ep_select(_mbase, _epnum)	musb->io.ep_select((_mbase), (_epnum))
 #define	MUSB_EP_OFFSET			MUSB_INDEXED_OFFSET
 #endif
 
@@ -224,6 +224,9 @@ struct musb_platform_ops {
 				dma_addr_t *dma_addr, u32 *len);
 	void	(*pre_root_reset_end)(struct musb *musb);
 	void	(*post_root_reset_end)(struct musb *musb);
+
+	u16	(*get_toggle)(struct musb_qh *qh, int is_out);
+	u16	(*set_toggle)(struct musb_qh *qh, int is_out, struct urb *urb);
 };
 
 /*
@@ -316,7 +319,7 @@ struct musb_context_registers {
 struct musb {
 	/* device lock */
 	spinlock_t		lock;
-
+	struct musb_io		io;
 	const struct musb_platform_ops *ops;
 	struct musb_context_registers context;
 
