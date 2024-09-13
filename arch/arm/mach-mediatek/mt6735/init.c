@@ -134,6 +134,18 @@ int mtk_pll_early_init(void)
     return 0;
 }
 
+int mach_cpu_init(void)
+{
+    void __iomem *base;
+
+    base = ioremap(L2_CFG_BASE, L2_CFG_SIZE);
+
+    /* disable L2C shared mode */
+    writel(L2_SHARE_MODE_OFF, base + L2_SHARE_CFG_MP0);
+
+    return 0;
+}
+
 int mtk_soc_early_init(void)
 {
 	struct udevice *dev;
