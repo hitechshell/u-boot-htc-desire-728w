@@ -45,6 +45,11 @@
 #define CPUX_CLK_DIV4		    BIT(10)
 #define CPUX_IDX_GLOBAL_IRQ	    0x30
 
+#define L2_CFG_BASE		0x10200000
+#define L2_CFG_SIZE		0x1000
+#define L2_SHARE_CFG_MP0	0x7f0
+#define L2_SHARE_MODE_OFF	BIT(8)
+
 DECLARE_GLOBAL_DATA_PTR;
 
 int timer_init(void)
