@@ -290,8 +290,14 @@
 #define MUSB_RXHUBADDR		0x06
 #define MUSB_RXHUBPORT		0x07
 
+#if defined(CONFIG_ARCH_MEDIATEK)
+#define MUSB_BUSCTL_OFFSET(_epnum, _offset) \
+	(0x480 + (8*(_epnum)) + (_offset))
+#else
 #define MUSB_BUSCTL_OFFSET(_epnum, _offset) \
 	(0x80 + (8*(_epnum)) + (_offset))
+
+#endif
 
 #else /* CONFIG_ARCH_SUNXI */
 
@@ -372,6 +378,13 @@
 
 #endif /* CONFIG_ARCH_SUNXI */
 
+#define MUSB_RXTOG	0x0080
+#define MUSB_RXTOGEN	0x0082
+#define MUSB_TXTOG	0x0084
+#define MUSB_TXTOGEN	0x0086
+#define MUSB_QMUBASE	0x800
+#define MUSB_QISAR	0xc00
+#define MUSB_QIMR	0xc04
 static inline void musb_write_txfifosz(void __iomem *mbase, u8 c_size)
 {
 	musb_writeb(mbase, MUSB_TXFIFOSZ, c_size);
@@ -452,7 +465,7 @@ static inline void __iomem *musb_read_target_reg_base(u8 i, void __iomem *mbase)
 {
 	return (MUSB_BUSCTL_OFFSET(i, 0) + mbase);
 }
-
+#ifndef CONFIG_ARCH_MEDIATEK
 static inline void musb_write_rxfunaddr(void __iomem *ep_target_regs,
 		u8 qh_addr_reg)
 {
@@ -470,7 +483,25 @@ static inline void musb_write_rxhubport(void __iomem *ep_target_regs,
 {
 	musb_writeb(ep_target_regs, MUSB_RXHUBPORT, qh_h_port_reg);
 }
+#else
+static inline void musb_write_rxfunaddr(void __iomem *mbase, u8 epnum,
+										u8 qh_addr_reg)
+{
+	musb_writeb(mbase, MUSB_BUSCTL_OFFSET(epnum, MUSB_RXFUNCADDR), qh_addr_reg);
+}
 
+static inline void musb_write_rxhubaddr(void __iomem *mbase, u8 epnum,
+										u8 qh_addr_reg)
+{
+	musb_writeb(mbase, MUSB_BUSCTL_OFFSET(epnum, MUSB_RXHUBADDR), qh_addr_reg);
+}
+
+static inline void musb_write_rxhubport(void __iomem *mbase, u8 epnum,
+										u8 qh_addr_reg)
+{
+	musb_writeb(mbase, MUSB_BUSCTL_OFFSET(epnum, MUSB_RXHUBPORT), qh_addr_reg);
+}
+#endif
 static inline void  musb_write_txfunaddr(void __iomem *mbase, u8 epnum,
 		u8 qh_addr_reg)
 {

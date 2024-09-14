@@ -15,6 +15,7 @@
 #define __MUSB_LINUX_PLATFORM_ARCH_H__
 
 #include <linux/io.h>
+#include <usb.h>
 #include <linux/usb/usb_urb_compat.h>
 #define musb_ep_select(_mbase, _epnum)	musb->io.ep_select((_mbase), (_epnum))
 /* NOTE:  these offsets are all in bytes */
@@ -32,14 +33,14 @@
  * @set_toggle: platform specific function to set toggle
  */
 struct musb_io {
-	u32	(*ep_offset)(u8 epnum, u16 offset);
+	u32		(*ep_offset)(u8 epnum, u16 offset);
 	void	(*ep_select)(void __iomem *mbase, u8 epnum);
-	u32	(*fifo_offset)(u8 epnum);
+	u32		(*fifo_offset)(u8 epnum);
 	void	(*read_fifo)(struct musb_hw_ep *hw_ep, u16 len, u8 *buf);
 	void	(*write_fifo)(struct musb_hw_ep *hw_ep, u16 len, const u8 *buf);
-	u32	(*busctl_offset)(u8 epnum, u16 offset);
-	u16	(*get_toggle)(struct musb_qh *qh, int is_out);
-	u16	(*set_toggle)(struct musb_qh *qh, int is_out, struct urb *urb);
+	u32		(*busctl_offset)(u8 epnum, u16 offset);
+	u16		(*get_toggle)(struct musb_qh *qh, int is_out);
+	u16		(*set_toggle)(struct musb_qh *qh, int is_out, struct urb *urb);
 };
 
 static inline u16 musb_readw(const void __iomem *addr, unsigned offset)

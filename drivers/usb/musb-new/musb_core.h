@@ -368,7 +368,7 @@ struct musb {
 	u8			int_usb;
 	u16			int_rx;
 	u16			int_tx;
-
+	u32 		int_queue;
 	struct usb_phy		*xceiv;
 
 	int nIrq;

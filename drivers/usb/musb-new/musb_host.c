@@ -337,8 +337,13 @@ static inline void musb_save_toggle(struct musb_qh *qh, int is_in,
  *
  * Context: caller owns controller lock, IRQs are blocked
  */
+#ifdef CONFIG_ARCH_MEDIATEK
+void musb_advance_schedule(struct musb *musb, struct urb *urb,
+				   struct musb_hw_ep *hw_ep, int is_in)
+#else
 static void musb_advance_schedule(struct musb *musb, struct urb *urb,
 				  struct musb_hw_ep *hw_ep, int is_in)
+#endif
 {
 	struct musb_qh		*qh = musb_ep_get_qh(hw_ep, is_in);
 	struct musb_hw_ep	*ep = qh->hw_ep;
@@ -426,7 +431,7 @@ static void musb_advance_schedule(struct musb *musb, struct urb *urb,
 	}
 }
 
-static u16 musb_h_flush_rxfifo(struct musb_hw_ep *hw_ep, u16 csr)
+u16 musb_h_flush_rxfifo(struct musb_hw_ep *hw_ep, u16 csr)
 {
 	/* we don't want fifo to fill itself again;
 	 * ignore dma (various models),

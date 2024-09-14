@@ -20,6 +20,13 @@ struct usb_urb_ops {
 	irqreturn_t (*isr)(int irq, void *priv);
 };
 
+struct usb_iso_packet_descriptor {
+	unsigned int offset;
+	unsigned int length;		/* expected length */
+	unsigned int actual_length;
+	int status;
+};
+
 struct usb_hcd {
 	void *hcd_priv;
 	const struct usb_urb_ops *urb_ops;
@@ -53,10 +60,12 @@ struct urb {
 	void *transfer_buffer;		/* (in) associated data buffer */
 	dma_addr_t transfer_dma;	/* (in) dma addr for transfer_buffer */
 	u32 transfer_buffer_length;	/* (in) data buffer length */
+	int number_of_packets;
 	u32 actual_length;		/* (return) actual transfer length */
 	unsigned char *setup_packet;	/* (in) setup packet (control only) */
 	int start_frame;		/* (modify) start frame (ISO) */
 	usb_complete_t complete;	/* (in) completion routine */
+	struct usb_iso_packet_descriptor iso_frame_desc[0];
 };
 
 #define usb_hcd_link_urb_to_ep(hcd, urb)	({		\
