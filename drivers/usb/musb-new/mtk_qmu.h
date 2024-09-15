@@ -61,6 +61,7 @@ extern unsigned int low_power_timer_total_trigger_cnt;
 extern unsigned int low_power_timer_total_wake_cnt;
 extern int low_power_timer_mode2_option;
 extern int low_power_timer_mode;
+extern int isoc_ep_end_idx;
 extern int mtk_qmu_dbg_level;	/* refer to musb_core.c */
 extern int mtk_qmu_max_gpd_num;
 extern struct musb_hw_ep *qmu_isoc_ep;

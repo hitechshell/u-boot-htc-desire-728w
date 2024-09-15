@@ -49,6 +49,9 @@ struct musb_qh {
 	u16			maxpacket;
 	u16			frame;		/* for periodic schedule */
 	unsigned		iso_idx;	/* in urb->iso_frame_desc[] */
+#ifdef CONFIG_ARCH_MEDIATEK
+	u8 is_use_qmu;
+#endif
 };
 
 /* map from control or bulk queue head to the first qh on that ring */

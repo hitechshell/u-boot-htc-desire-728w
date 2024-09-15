@@ -107,15 +107,20 @@
 
 #define MUSB_DRIVER_NAME "musb-hdrc"
 
-
+int mtk_host_qmu_pipe_msk = (PIPE_ISOCHRONOUS + 1);
 u32 dma_channel_setting, qmu_ioc_setting;
 int mtk_qmu_dbg_level = LOG_WARN;
 int mtk_qmu_max_gpd_num;
+int mtk_host_qmu_concurrent = 1;
 int isoc_ep_start_idx = 6;
+int isoc_ep_end_idx = 3;
 int isoc_ep_gpd_count = 260;
+module_param(mtk_host_qmu_concurrent, int, 0644);
+module_param(mtk_host_qmu_pipe_msk, int, 0644);
 module_param(mtk_qmu_dbg_level, int, 0644);
 module_param(mtk_qmu_max_gpd_num, int, 0644);
 module_param(isoc_ep_start_idx, int, 0644);
+module_param(isoc_ep_end_idx, int, 0644);
 module_param(isoc_ep_gpd_count, int, 0644);
 
 const char musb_driver_name[] = MUSB_DRIVER_NAME;
