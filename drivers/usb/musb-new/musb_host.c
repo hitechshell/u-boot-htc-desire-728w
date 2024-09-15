@@ -31,7 +31,7 @@
 
 #include "musb_core.h"
 #include "musb_host.h"
-
+#include "musb_qmu.h"
 /* MUSB HOST status 22-mar-2006
  *
  * - There's still lots of partial code duplication for fault paths, so
@@ -166,7 +166,7 @@ static inline void musb_h_tx_dma_start(struct musb_hw_ep *ep)
 	musb_writew(ep->regs, MUSB_TXCSR, txcsr);
 }
 
-static void musb_ep_set_qh(struct musb_hw_ep *ep, int is_in, struct musb_qh *qh)
+void musb_ep_set_qh(struct musb_hw_ep *ep, int is_in, struct musb_qh *qh)
 {
 	if (is_in != 0 || ep->is_shared_fifo)
 		ep->in_qh  = qh;
@@ -174,7 +174,7 @@ static void musb_ep_set_qh(struct musb_hw_ep *ep, int is_in, struct musb_qh *qh)
 		ep->out_qh = qh;
 }
 
-static struct musb_qh *musb_ep_get_qh(struct musb_hw_ep *ep, int is_in)
+struct musb_qh *musb_ep_get_qh(struct musb_hw_ep *ep, int is_in)
 {
 	return is_in ? ep->in_qh : ep->out_qh;
 }
@@ -559,8 +559,9 @@ musb_host_packet_rx(struct musb *musb, struct urb *urb, u8 epnum, u8 iso_err)
  * the busy/not-empty tests are basically paranoia.
  */
 static void
-musb_rx_reinit(struct musb *musb, struct musb_qh *qh, struct musb_hw_ep *ep)
+musb_rx_reinit(struct musb *musb, struct musb_qh *qh, u8 epnum)
 {
+	struct musb_hw_ep *ep = musb->endpoints + epnum;
 	u16	csr;
 
 	/* NOTE:  we know the "rx" fifo reinit never triggers for ep0.
@@ -598,10 +599,15 @@ musb_rx_reinit(struct musb *musb, struct musb_qh *qh, struct musb_hw_ep *ep)
 
 	/* target addr and (for multipoint) hub addr/port */
 	if (musb->is_multipoint) {
+#ifdef CONFIG_ARCH_MEDIATEK
+		musb_write_rxfunaddr(musb->mregs, ep->epnum, qh->addr_reg);
+		musb_write_rxhubaddr(musb->mregs, ep->epnum, qh->h_addr_reg);
+		musb_write_rxhubport(musb->mregs, ep->epnum, qh->h_port_reg);
+#else
 		musb_write_rxfunaddr(ep->target_regs, qh->addr_reg);
 		musb_write_rxhubaddr(ep->target_regs, qh->h_addr_reg);
 		musb_write_rxhubport(ep->target_regs, qh->h_port_reg);
-
+#endif
 	} else
 		musb_writeb(musb->mregs, MUSB_FADDR, qh->addr_reg);
 
@@ -1381,7 +1387,7 @@ void musb_host_tx(struct musb *musb, u8 epnum)
 /* Schedule next QH from musb->in_bulk and move the current qh to
  * the end; avoids starvation for other endpoints.
  */
-static void musb_bulk_rx_nak_timeout(struct musb *musb, struct musb_hw_ep *ep)
+static void musb_bulk_rx_nak_timeout(struct musb *musb, struct musb_hw_ep *ep, int is_in)
 {
 	struct dma_channel	*dma;
 	struct urb		*urb;
@@ -1500,7 +1506,7 @@ void musb_host_rx(struct musb *musb, u8 epnum)
 			if (usb_pipebulk(urb->pipe)
 					&& qh->mux == 1
 					&& !list_is_singular(&musb->in_bulk)) {
-				musb_bulk_rx_nak_timeout(musb, hw_ep);
+				musb_bulk_rx_nak_timeout(musb, hw_ep, 1);
 				return;
 			}
 			musb_ep_select(mbase, epnum);

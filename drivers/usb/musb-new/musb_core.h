@@ -356,7 +356,6 @@ struct musb {
 	struct device		*controller;
 	void __iomem		*ctrl_base;
 	void __iomem		*mregs;
-
 #if defined(CONFIG_USB_MUSB_TUSB6010) || \
 	defined(CONFIG_USB_MUSB_TUSB6010_MODULE)
 	dma_addr_t		async;

@@ -68,7 +68,6 @@ struct musb_ep {
 
 	/* true if lock must be dropped but req_list may not be advanced */
 	u8				busy;
-
 	u8				hb_mult;
 };
 

@@ -17,6 +17,13 @@
 #include "mtk_qmu.h"
 #include "musb_core.h"		/* for struct musb */
 
+
+
+extern int mtk_qmu_dbg_level;	/* refer to musb_core.c */
+extern int mtk_qmu_max_gpd_num;
+extern struct musb_hw_ep *qmu_isoc_ep;
+extern int isoc_ep_start_idx;
+extern int isoc_ep_gpd_count;
 extern int musb_qmu_init(struct musb *musb);
 extern void musb_qmu_exit(struct musb *musb);
 extern void musb_kick_D_CmdQ(struct musb *musb, struct musb_request *request);
@@ -26,7 +33,7 @@ extern void musb_flush_qmu(u32 ep_num, u8 isRx);
 extern void musb_restart_qmu(struct musb *musb, u32 ep_num, u8 isRx);
 extern bool musb_is_qmu_stop(u32 ep_num, u8 isRx);
 extern void musb_tx_zlp_qmu(struct musb *musb, u32 ep_num);
-
+extern void __iomem *qmu_base;
 /*FIXME, not good layer present */
 extern void mtk_qmu_enable(struct musb *musb, u8 EP_Num, u8 isRx);
 extern void __iomem *qmu_base;

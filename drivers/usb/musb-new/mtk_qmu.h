@@ -124,6 +124,24 @@ static inline int mtk_dbg_level(unsigned level)
 #define MGC_O_QMU_TQSAR(n) (MGC_O_QMU_TQSAR0+0x0010*((n)-1))
 #define MGC_O_QMU_TQCPR(n) (MGC_O_QMU_TQCPR0+0x0010*((n)-1))
 
+
+#define OTG20_CSRL	0x730	/* OTG20 Related Control Register L */
+#define OTG20_CSRH	0x731	/* OTG20 Related Control Register H */
+
+/* OTG20 Related Control Register L */
+#define DIS_HSUS		(1<<7)	/* Disable Host mode entering C_OPM_HSUS state before entering suspend */
+#define A_HFS_WHNP		(1<<6)	/* EN: FS idle of A device will transfer to HFS_HSUS state first */
+#define DIS_B_WTDIS		(1<<5)	/* Disables B device entering C_OPM_B_WTDIS states before switching to host mode */
+#define HHS_SUSP_DIS	(1<<4)	/* EN: host-hs-suspend entering OPM_FS_WTCON state first while receiving disconnect signal */
+#define DIS_CHARGE_VBUS	(1<<3)	/* EN: Disables B device charging VBUS function for OTG2.0 feature */
+#define HSUS_RESUME_INT	(1<<2)	/* EN: hsus mode of host initializing resuming interrupt while receiving resume K as waiting for HNP */
+#define HSUS_RESUME		(1<<1)	/* EN: hnpsus-mode of host entering host-normal mode as receiving resume K while waiting for HNP */
+#define OTG20_EN		(1<<0)	/* Enables OTG 2.0 feature */
+
+/* OTG20 Related Control Register H */
+#define DIS_AUTORST	(1<<1)	/* Informs whether HW sends bus reset automatically
+		while B-device changes to host with HNP */
+#define CON_DEB_SHORT	(1<<0)	/* EN: to decrease A device connection denounce waiting timing */
 #define MGC_O_QMU_QAR		0x0300
 #define MGC_O_QUCS_USBGCSR	0x0000
 #define MGC_O_QIRQ_QISAR		0x0000

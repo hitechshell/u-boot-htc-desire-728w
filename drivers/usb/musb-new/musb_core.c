@@ -95,7 +95,7 @@
 #endif
 
 #include "musb_core.h"
-
+#include "musb_qmu.h"
 #define TA_WAIT_BCON(m) max_t(int, (m)->a_wait_bcon, OTG_TIME_A_WAIT_BCON)
 
 #define DRIVER_AUTHOR "Mentor Graphics, Texas Instruments, Nokia"
@@ -106,6 +106,18 @@
 #define DRIVER_INFO DRIVER_DESC ", v" MUSB_VERSION
 
 #define MUSB_DRIVER_NAME "musb-hdrc"
+
+
+u32 dma_channel_setting, qmu_ioc_setting;
+int mtk_qmu_dbg_level = LOG_WARN;
+int mtk_qmu_max_gpd_num;
+int isoc_ep_start_idx = 6;
+int isoc_ep_gpd_count = 260;
+module_param(mtk_qmu_dbg_level, int, 0644);
+module_param(mtk_qmu_max_gpd_num, int, 0644);
+module_param(isoc_ep_start_idx, int, 0644);
+module_param(isoc_ep_gpd_count, int, 0644);
+
 const char musb_driver_name[] = MUSB_DRIVER_NAME;
 
 MODULE_DESCRIPTION(DRIVER_INFO);
@@ -703,7 +715,7 @@ static irqreturn_t musb_stage0_irq(struct musb *musb, u8 int_usb,
 
 		handled = IRQ_HANDLED;
 		musb->is_active = 1;
-
+		musb_disable_q_all(musb);
 		musb->ep0_stage = MUSB_EP0_START;
 
 		/* flush endpoints when transitioning from Device Mode */
@@ -762,7 +774,14 @@ b_host:
 		dev_dbg(musb->controller, "CONNECT (%s) devctl %02x\n",
 				otg_state_string(musb->xceiv->state), devctl);
 #endif
+
+		u8 otg20_csrh;
+
+		otg20_csrh = musb_readb(musb->mregs, OTG20_CSRH);
+		otg20_csrh |= DIS_AUTORST;
+		musb_writeb(musb->mregs, OTG20_CSRH, otg20_csrh);
 	}
+
 
 #ifndef __UBOOT__
 	if ((int_usb & MUSB_INTR_DISCONNECT) && !musb->ignore_disconnect) {
@@ -998,6 +1017,103 @@ int musb_start(struct musb *musb)
 #endif
 }
 
+static void gadget_stop(struct musb *musb)
+{
+	u8 power;
+
+	if (musb->is_host)
+		return;
+
+	power = musb_readb(musb->mregs, MUSB_POWER);
+	power &= ~MUSB_POWER_SOFTCONN;
+	musb_writeb(musb->mregs, MUSB_POWER, power);
+
+	/* notify gadget driver, g.speed judge is very important */
+	if (musb->g.speed != USB_SPEED_UNKNOWN) {
+		pr_debug("musb->gadget_driver:%p\n"
+		, musb->gadget_driver);
+		if (musb->gadget_driver && musb->gadget_driver->disconnect) {
+			pr_debug("musb->gadget_driver->disconnect:%p\n",
+				musb->gadget_driver->disconnect);
+			/* align musb_g_disconnect */
+			spin_unlock(&musb->lock);
+
+			musb->gadget_driver->disconnect(&musb->g);
+		}
+		musb->g.speed = USB_SPEED_UNKNOWN;
+	}
+}
+
+
+void musb_flush_dma_transcation(struct musb *musb)
+{
+	int i = 0;
+
+	/* 1. Stop Queue: Set TXQ_STOP or RXQ_STOP.
+	 * TQCSR0(0xA00) ~ TQCSR7(0xA70)
+	 * RQCSR0(0x810) ~ RQCSR7(0x880)
+	 */
+	for (i = 1; i < musb->nr_endpoints; i++) {
+		mtk_qmu_stop(i, 0);
+		mtk_qmu_stop(i, 1);
+	}
+	/* 2. Set DMA_CNTL = 0, DMA_CNT = 0, DMA_ADDRESS = 0
+	 * DMA_CNTL_0(0x204) ~ DMA_CNTL_7(0x274)
+	 * DMA_ADDR_0(0x208) ~ DMA_ADDR_7(0x278)
+	 * DMA_COUNT_0(0x20C) ~ DMA_COUNT_7(0x27C)
+	 */
+	for (i = 0; i < 8; i++) {
+		u32 val = musb_readl(musb->mregs,
+							 MUSB_HSDMA_CHANNEL_OFFSET((i),
+													   MUSB_HSDMA_CONTROL));
+
+		if (val) {
+			pr_notice("CH%d(0x%x)=0x%x\n", i,
+					  MUSB_HSDMA_CHANNEL_OFFSET((i),
+												MUSB_HSDMA_CONTROL), val);
+		}
+			musb_writel(musb->mregs, MUSB_HSDMA_CHANNEL_OFFSET((i),
+															   MUSB_HSDMA_CONTROL), 0);
+			musb_writel(musb->mregs, MUSB_HSDMA_CHANNEL_OFFSET((i),
+															   MUSB_HSDMA_ADDRESS), 0);
+			musb_writel(musb->mregs, MUSB_HSDMA_CHANNEL_OFFSET((i),
+															   MUSB_HSDMA_COUNT), 0);
+
+			val = musb_readl(musb->mregs, MUSB_HSDMA_CHANNEL_OFFSET((i),
+																	MUSB_HSDMA_CONTROL));
+			if (val)
+				pr_notice("CH%d(0x%x)=0x%x\n", i,
+						  MUSB_HSDMA_CHANNEL_OFFSET((i),
+													MUSB_HSDMA_CONTROL), val);
+	}
+
+	/* 3. For Tx, flush Tx FIFO: set (TXCSR_FLUSH_FIFO | TXCSR_TXPKTRDY)
+	 *    For Rx, flush Rx FIFO: set (RXCSR_FLUSH_FIFO | RXCSR_RXPKTRDY)
+	 */
+	for (i = 1; i < musb->nr_endpoints; i++) {
+		/* void __iomem *mbase = musb->mregs;
+		 * hw_ep->regs = MUSB_EP_OFFSET(i, 0) + mbase;
+		 * #define MUSB_INDEXED_OFFSET(_epnum, _offset)
+		 *	(0x10 + (_offset))
+		 */
+		void __iomem *epio = musb->endpoints[i].regs;
+		u16 csr;
+
+		/* INDEX 0x0E*/
+		musb_ep_select(musb->mregs, i);
+
+		/* TXCSR 0x12*/
+		csr = musb_readw(epio, MUSB_TXCSR);
+		csr |= MUSB_TXCSR_FLUSHFIFO | MUSB_TXCSR_TXPKTRDY;
+		musb_writew(epio, MUSB_TXCSR, csr);
+
+		/* RXCSR 0x16*/
+		csr = musb_readw(epio, MUSB_RXCSR);
+		csr |= MUSB_RXCSR_FLUSHFIFO | MUSB_RXCSR_RXPKTRDY;
+		musb_writew(epio, MUSB_RXCSR, csr);
+	}
+}
+
 static void musb_generic_disable(struct musb *musb)
 {
 	void __iomem	*mbase = musb->mregs;
@@ -1028,8 +1144,12 @@ static void musb_generic_disable(struct musb *musb)
 void musb_stop(struct musb *musb)
 {
 	/* stop IRQs, timers, ... */
-	musb_platform_disable(musb);
 	musb_generic_disable(musb);
+
+	gadget_stop(musb);
+
+	musb_flush_dma_transcation(musb);
+	musb_platform_disable(musb);
 	dev_dbg(musb->controller, "HDRC disabled\n");
 
 	/* FIXME
@@ -1054,8 +1174,11 @@ static void musb_shutdown(struct platform_device *pdev)
 	musb_gadget_cleanup(musb);
 
 	spin_lock_irqsave(&musb->lock, flags);
-	musb_platform_disable(musb);
 	musb_generic_disable(musb);
+
+	musb_flush_dma_transcation(musb);
+
+	musb_platform_disable(musb);
 	spin_unlock_irqrestore(&musb->lock, flags);
 
 	if (!is_otg_enabled(musb) && is_host_enabled(musb))
@@ -1617,6 +1740,11 @@ irqreturn_t musb_interrupt(struct musb *musb)
 		}
 	}
 
+	if (musb->int_queue) {
+		musb_q_irq(musb);
+		retval = IRQ_HANDLED;
+	}
+
 	/* RX on endpoints 1-15 */
 	reg = musb->int_rx >> 1;
 	ep_num = 1;
@@ -1918,6 +2046,10 @@ static void musb_free(struct musb *musb)
 	sysfs_remove_group(&musb->controller->kobj, &musb_attr_group);
 #endif
 
+	musb_gadget_cleanup(musb);
+	musb_disable_q_all(musb);
+	musb_qmu_exit(musb);
+
 	if (musb->nIrq >= 0) {
 		if (musb->irq_wake)
 			disable_irq_wake(musb->nIrq);
@@ -2054,6 +2186,7 @@ musb_init_controller(struct musb_hdrc_platform_data *plat, struct device *dev,
 
 	setup_timer(&musb->otg_timer, musb_otg_timer_func, (unsigned long) musb);
 
+	musb_qmu_init(musb);
 	/* Init IRQ workqueue before request_irq */
 	INIT_WORK(&musb->irq_work, musb_irq_work);
 

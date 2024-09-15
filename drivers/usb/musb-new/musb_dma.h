@@ -55,6 +55,15 @@ struct musb_hw_ep;
 #define tusb_dma_omap()			0
 #endif
 
+
+#define MUSB_HSDMA_BASE		0x200
+#define MUSB_HSDMA_INTR		(MUSB_HSDMA_BASE + 0)
+#define MUSB_HSDMA_CONTROL		0x4
+#define MUSB_HSDMA_ADDRESS		0x8
+#define MUSB_HSDMA_COUNT		0xc
+
+#define MUSB_HSDMA_CHANNEL_OFFSET(_bchannel, _offset)		\
+(MUSB_HSDMA_BASE + (_bchannel << 4) + _offset)
 /*
  * DMA channel status ... updated by the dma controller driver whenever that
  * status changes, and protected by the overall controller spinlock.
