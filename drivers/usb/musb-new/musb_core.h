@@ -334,6 +334,7 @@ struct musb {
 
 	unsigned long		rh_timer;
 
+	int 					dma_irq;
 	enum musb_h_ep0_state	ep0_stage;
 
 	/* bulk traffic normally dedicates endpoint hardware, and each
