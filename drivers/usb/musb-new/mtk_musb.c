@@ -196,11 +196,11 @@ static int mtk_musb_enable(struct musb *musb)
 		return ret;
 	}
 
-	ret = generic_phy_set_mode(&glue->phy, PHY_MODE_USB_DEVICE, 0);
-	if (ret) {
-		printf("Setting USB PHY Peripheral mode failed with error %d\n", ret);
-		return ret;
-	}
+	#ifdef CONFIG_USB_MUSB_HOST
+	generic_phy_set_mode(&glue->phy, PHY_MODE_USB_HOST, 0);
+	#else
+	generic_phy_set_mode(&glue->phy, PHY_MODE_USB_DEVICE, 0);
+	#endif
 
 	/* turning on the USB core cuz musb_core wouldn't */
 	tmp = musb_readb(musb->mregs, 0x1);
@@ -233,7 +233,7 @@ static void mtk_musb_disable(struct musb *musb)
 			return;
 		}
 	}
-
+	generic_phy_set_mode(&glue->phy, PHY_MODE_INVALID, 0);
 	regulator_set_enable(glue->vusb33_supply, false);
 	enabled = false;
 }
@@ -258,11 +258,6 @@ static int mtk_musb_init(struct musb *musb)
 	ret = generic_phy_power_on(&glue->phy);
 	if (ret)
 		return ret;
-#ifdef CONFIG_USB_MUSB_HOST
-	generic_phy_set_mode(&glue->phy, PHY_MODE_USB_HOST, 0);
-#else
-	generic_phy_set_mode(&glue->phy, PHY_MODE_USB_DEVICE, 0);
-#endif
 
 	return 0;
 }

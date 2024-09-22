@@ -2163,14 +2163,14 @@ musb_init_controller(struct musb_hdrc_platform_data *plat, struct device *dev,
 	pm_runtime_get_sync(musb->controller);
 
 #ifndef CONFIG_USB_MUSB_PIO_ONLY
-	if (use_dma && dev->dma_mask) {
+	// if (use_dma && dev->dma_mask) {
 		struct dma_controller	*c;
 
 		c = dma_controller_create(musb, musb->mregs);
 		musb->dma_controller = c;
 		if (c)
 			(void) c->start(c);
-	}
+	// }
 #endif
 #ifndef __UBOOT__
 	/* ideally this would be abstracted in platform setup */

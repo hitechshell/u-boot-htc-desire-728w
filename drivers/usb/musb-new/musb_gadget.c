@@ -19,7 +19,6 @@
 #include <linux/smp.h>
 #include <linux/spinlock.h>
 #include <linux/delay.h>
-#include <linux/dma-mapping.h>
 #include <linux/slab.h>
 #else
 #include <dm.h>
@@ -27,6 +26,7 @@
 #include <linux/bug.h>
 #include <linux/printk.h>
 #include <linux/usb/ch9.h>
+#include <linux/dma-mapping.h>
 #include "linux-compat.h"
 #endif
 
@@ -108,7 +108,6 @@ static inline void map_dma_buffer(struct musb_request *request,
 #endif
 	if (request->request.dma == DMA_ADDR_INVALID) {
 		request->request.dma = dma_map_single(
-				musb->controller,
 				request->request.buf,
 				request->request.length,
 				request->tx
@@ -116,6 +115,7 @@ static inline void map_dma_buffer(struct musb_request *request,
 					: DMA_FROM_DEVICE);
 		request->map_state = MUSB_MAPPED;
 	} else {
+#ifndef __UBOOT__
 		dma_sync_single_for_device(musb->controller,
 			request->request.dma,
 			request->request.length,
@@ -123,6 +123,7 @@ static inline void map_dma_buffer(struct musb_request *request,
 				? DMA_TO_DEVICE
 				: DMA_FROM_DEVICE);
 		request->map_state = PRE_MAPPED;
+#endif
 	}
 }
 
@@ -139,7 +140,7 @@ static inline void unmap_dma_buffer(struct musb_request *request,
 		return;
 	}
 	if (request->map_state == MUSB_MAPPED) {
-		dma_unmap_single(musb->controller,
+		dma_unmap_single(
 			request->request.dma,
 			request->request.length,
 			request->tx
@@ -147,12 +148,14 @@ static inline void unmap_dma_buffer(struct musb_request *request,
 				: DMA_FROM_DEVICE);
 		request->request.dma = DMA_ADDR_INVALID;
 	} else { /* PRE_MAPPED */
+#ifndef __UBOOT__
 		dma_sync_single_for_cpu(musb->controller,
 			request->request.dma,
 			request->request.length,
 			request->tx
 				? DMA_TO_DEVICE
 				: DMA_FROM_DEVICE);
+#endif
 	}
 	request->map_state = UN_MAPPED;
 }
