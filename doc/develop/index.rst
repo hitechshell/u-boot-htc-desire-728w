@@ -13,6 +13,7 @@ General
    codingstyle
    designprinciples
    docstyle
+   memory
    patman
    process
    release_cycle
@@ -38,6 +39,7 @@ Implementation
    distro
    driver-model/index
    environment
+   init
    expo
    cedit
    event
@@ -99,3 +101,11 @@ Code quality
    :maxdepth: 1
 
    python_cq
+
+Historical documentation
+------------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   historical/index
