@@ -357,6 +357,7 @@ static void u2_phy_instance_power_on(struct mtk_tphy *tphy,
 			P2C_RG_SESSEND, P2C_RG_VBUSVALID | P2C_RG_AVALID);
 
 	dev_dbg(tphy->dev, "%s(%d)\n", __func__, instance->index);
+	setbits_le32(u2_banks->com + U3P_U2PHYDTM1, P2C_FORCE_ENTER_DEVICE_MODE);
 }
 
 static void u2_phy_instance_power_off(struct mtk_tphy *tphy,
@@ -625,7 +626,7 @@ static void u2_phy_instance_set_mode(struct mtk_tphy *tphy,
 			tmp |= P2C_FORCE_IDDIG;
 			tmp &= ~P2C_RG_IDDIG;
 			break;
-		case PHY_MODE_INVALID:
+		case PHY_MODE_USB_OTG:
 			tmp &= ~(P2C_FORCE_IDDIG | P2C_RG_IDDIG);
 			break;
 		default:
