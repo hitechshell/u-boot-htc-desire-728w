@@ -221,6 +221,13 @@ config CMD_REGINFO
 	help
 	  Register dump
 
+config CMD_TCPM
+	bool "tcpm"
+	depends on TYPEC_TCPM
+	help
+	  Show voltage and current negotiated via USB PD as well as the
+	  current state of the Type C Port Manager (TCPM) state machine.
+
 config CMD_TLV_EEPROM
 	bool "tlv_eeprom"
 	depends on I2C_EEPROM
@@ -2110,6 +2117,7 @@ config CMD_TFTPBOOT
 
 config CMD_WGET
 	bool "wget"
+	depends on CMD_NET
 	default y if SANDBOX
 	select PROT_TCP if NET
 	select PROT_TCP_LWIP if NET_LWIP
@@ -2284,6 +2292,7 @@ config CMD_DATE
 config CMD_RTC
 	bool "rtc"
 	depends on DM_RTC
+	default y if X86
 	help
 	  Enable the 'rtc' command for low-level access to RTC devices.
 

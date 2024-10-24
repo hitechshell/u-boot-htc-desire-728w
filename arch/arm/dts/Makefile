@@ -961,8 +961,6 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
 	imx8mp-dhcom-som-overlay-eth2xfast.dtbo \
 	imx8mp-dhcom-pdk-overlay-eth2xfast.dtbo \
 	imx8mp-dhcom-drc02.dtb \
-	imx8mp-dhcom-pdk2.dtb \
-	imx8mp-dhcom-pdk3.dtb \
 	imx8mp-dhcom-pdk3-overlay-rev100.dtbo \
 	imx8mp-dhcom-picoitx.dtb \
 	imx8mp-icore-mx8mp-edimm2.2.dtb \
@@ -1142,7 +1140,6 @@ dtb-$(CONFIG_ASPEED_AST2600) += \
 dtb-$(CONFIG_ARCH_STI) += stih410-b2260.dtb
 
 dtb-$(CONFIG_STM32MP13X) += \
-	stm32mp135f-dhcor-dhsbc.dtb \
 	stm32mp135f-dk.dtb
 
 dtb-$(CONFIG_STM32MP15X) += \
@@ -1158,13 +1155,7 @@ dtb-$(CONFIG_STM32MP15X) += \
 	stm32mp157c-ed1-scmi.dtb \
 	stm32mp157c-ev1.dtb \
 	stm32mp157c-ev1-scmi.dtb \
-	stm32mp157c-odyssey.dtb \
-	stm32mp15xx-dhcom-drc02.dtb \
-	stm32mp15xx-dhcom-pdk2.dtb \
-	stm32mp15xx-dhcom-picoitx.dtb \
-	stm32mp15xx-dhcor-avenger96.dtb \
-	stm32mp15xx-dhcor-drc-compact.dtb \
-	stm32mp15xx-dhcor-testbench.dtb
+	stm32mp157c-odyssey.dtb
 
 dtb-$(CONFIG_STM32MP25X) += \
 	stm32mp257f-ev1.dtb
