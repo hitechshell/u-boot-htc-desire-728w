@@ -21,7 +21,6 @@ obj-$(CONFIG_$(PHASE_)INPUT) += input/
 obj-$(CONFIG_$(PHASE_)LED) += led/
 obj-$(CONFIG_$(PHASE_)MMC) += mmc/
 obj-y += mtd/
-<<<<<<< HEAD
 obj-$(CONFIG_$(SPL_TPL_)ETH) += net/
 obj-$(CONFIG_$(SPL_TPL_)PCH) += pch/
 obj-$(CONFIG_$(SPL_TPL_)PCI) += pci/
@@ -41,7 +40,6 @@ obj-$(CONFIG_$(SPL_)SYSINFO) += sysinfo/
 obj-$(CONFIG_$(SPL_TPL_)SM) += sm/
 obj-$(CONFIG_$(SPL_TPL_)TPM) += tpm/
 obj-$(CONFIG_$(SPL_)NVME) += nvme/
-=======
 obj-$(CONFIG_$(PHASE_)ETH) += net/
 obj-$(CONFIG_$(PHASE_)PCH) += pch/
 obj-$(CONFIG_$(PHASE_)PCI) += pci/
@@ -60,7 +58,6 @@ obj-$(CONFIG_$(XPL_)SYSINFO) += sysinfo/
 obj-$(CONFIG_$(PHASE_)SM) += sm/
 obj-$(CONFIG_$(PHASE_)TPM) += tpm/
 obj-$(CONFIG_$(XPL_)NVME) += nvme/
->>>>>>> upstream/master
 obj-$(CONFIG_XEN) += xen/
 obj-$(CONFIG_$(XPL_)FPGA) += fpga/
 obj-$(CONFIG_$(XPL_)VIDEO) += video/

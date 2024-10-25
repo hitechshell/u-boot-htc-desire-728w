@@ -334,6 +334,7 @@ struct musb {
 
 	unsigned long		rh_timer;
 
+	int 					dma_irq;
 	enum musb_h_ep0_state	ep0_stage;
 
 	/* bulk traffic normally dedicates endpoint hardware, and each
@@ -356,6 +357,7 @@ struct musb {
 	struct device		*controller;
 	void __iomem		*ctrl_base;
 	void __iomem		*mregs;
+
 #if defined(CONFIG_USB_MUSB_TUSB6010) || \
 	defined(CONFIG_USB_MUSB_TUSB6010_MODULE)
 	dma_addr_t		async;
@@ -367,7 +369,7 @@ struct musb {
 	u8			int_usb;
 	u16			int_rx;
 	u16			int_tx;
-	u32 		int_queue;
+
 	struct usb_phy		*xceiv;
 
 	int nIrq;

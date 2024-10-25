@@ -31,7 +31,7 @@
 
 #include "musb_core.h"
 #include "musb_host.h"
-#include "musb_qmu.h"
+
 /* MUSB HOST status 22-mar-2006
  *
  * - There's still lots of partial code duplication for fault paths, so
@@ -166,7 +166,7 @@ static inline void musb_h_tx_dma_start(struct musb_hw_ep *ep)
 	musb_writew(ep->regs, MUSB_TXCSR, txcsr);
 }
 
-void musb_ep_set_qh(struct musb_hw_ep *ep, int is_in, struct musb_qh *qh)
+static void musb_ep_set_qh(struct musb_hw_ep *ep, int is_in, struct musb_qh *qh)
 {
 	if (is_in != 0 || ep->is_shared_fifo)
 		ep->in_qh  = qh;
@@ -174,7 +174,7 @@ void musb_ep_set_qh(struct musb_hw_ep *ep, int is_in, struct musb_qh *qh)
 		ep->out_qh = qh;
 }
 
-struct musb_qh *musb_ep_get_qh(struct musb_hw_ep *ep, int is_in)
+static struct musb_qh *musb_ep_get_qh(struct musb_hw_ep *ep, int is_in)
 {
 	return is_in ? ep->in_qh : ep->out_qh;
 }
@@ -337,13 +337,8 @@ static inline void musb_save_toggle(struct musb_qh *qh, int is_in,
  *
  * Context: caller owns controller lock, IRQs are blocked
  */
-#ifdef CONFIG_ARCH_MEDIATEK
-void musb_advance_schedule(struct musb *musb, struct urb *urb,
-				   struct musb_hw_ep *hw_ep, int is_in)
-#else
 static void musb_advance_schedule(struct musb *musb, struct urb *urb,
 				  struct musb_hw_ep *hw_ep, int is_in)
-#endif
 {
 	struct musb_qh		*qh = musb_ep_get_qh(hw_ep, is_in);
 	struct musb_hw_ep	*ep = qh->hw_ep;
@@ -397,9 +392,6 @@ static void musb_advance_schedule(struct musb *musb, struct urb *urb,
 		musb_ep_set_qh(ep, is_in, NULL);
 		qh->hep->hcpriv = NULL;
 
-		if (qh->is_use_qmu)
-			mtk_disable_q(musb, hw_ep->epnum, is_in);
-
 		switch (qh->type) {
 
 		case USB_ENDPOINT_XFER_CONTROL:
@@ -430,19 +422,11 @@ static void musb_advance_schedule(struct musb *musb, struct urb *urb,
 	if (qh != NULL && qh->is_ready) {
 		dev_dbg(musb->controller, "... next ep%d %cX urb %p\n",
 		    hw_ep->epnum, is_in ? 'R' : 'T', next_urb(qh));
-#ifdef CONFIG_ARCH_MEDIATEK
-		if (qh->is_use_qmu && !mtk_host_qmu_concurrent) {
-			musb_ep_set_qh(hw_ep, is_in, qh);
-			mtk_kick_CmdQ(musb, is_in ? 1:0, qh, next_urb(qh));
-		} else if (!qh->is_use_qmu)
-			musb_start_urb(musb, is_in, qh);
-#else
 		musb_start_urb(musb, is_in, qh);
-#endif
 	}
 }
 
-u16 musb_h_flush_rxfifo(struct musb_hw_ep *hw_ep, u16 csr)
+static u16 musb_h_flush_rxfifo(struct musb_hw_ep *hw_ep, u16 csr)
 {
 	/* we don't want fifo to fill itself again;
 	 * ignore dma (various models),
@@ -570,9 +554,8 @@ musb_host_packet_rx(struct musb *musb, struct urb *urb, u8 epnum, u8 iso_err)
  * the busy/not-empty tests are basically paranoia.
  */
 static void
-musb_rx_reinit(struct musb *musb, struct musb_qh *qh, u8 epnum)
+musb_rx_reinit(struct musb *musb, struct musb_qh *qh, struct musb_hw_ep *ep)
 {
-	struct musb_hw_ep *ep = musb->endpoints + epnum;
 	u16	csr;
 
 	/* NOTE:  we know the "rx" fifo reinit never triggers for ep0.
@@ -610,15 +593,10 @@ musb_rx_reinit(struct musb *musb, struct musb_qh *qh, u8 epnum)
 
 	/* target addr and (for multipoint) hub addr/port */
 	if (musb->is_multipoint) {
-#ifdef CONFIG_ARCH_MEDIATEK
-		musb_write_rxfunaddr(musb->mregs, ep->epnum, qh->addr_reg);
-		musb_write_rxhubaddr(musb->mregs, ep->epnum, qh->h_addr_reg);
-		musb_write_rxhubport(musb->mregs, ep->epnum, qh->h_port_reg);
-#else
 		musb_write_rxfunaddr(ep->target_regs, qh->addr_reg);
 		musb_write_rxhubaddr(ep->target_regs, qh->h_addr_reg);
 		musb_write_rxhubport(ep->target_regs, qh->h_port_reg);
-#endif
+
 	} else
 		musb_writeb(musb->mregs, MUSB_FADDR, qh->addr_reg);
 
@@ -1131,11 +1109,6 @@ void musb_host_tx(struct musb *musb, u8 epnum)
 	struct dma_channel	*dma;
 	bool			transfer_pending = false;
 
-#ifdef CONFIG_ARCH_MEDIATEK
-	if (qh && qh->is_use_qmu)
-		return;
-#endif
-
 	musb_ep_select(mbase, epnum);
 	tx_csr = musb_readw(epio, MUSB_TXCSR);
 
@@ -1223,7 +1196,6 @@ void musb_host_tx(struct musb *musb, u8 epnum)
 		 * switch back to mode 0 to get that interrupt; we'll come
 		 * back here once it happens.
 		 */
-#ifndef CONFIG_ARCH_MEDIATEK
 		if (tx_csr & MUSB_TXCSR_DMAMODE) {
 			/*
 			 * We shouldn't clear DMAMODE with DMAENAB set; so
@@ -1261,7 +1233,7 @@ void musb_host_tx(struct musb *musb, u8 epnum)
 			 */
 			tx_csr = musb_readw(epio, MUSB_TXCSR);
 		}
-#endif
+
 		/*
 		 * We may get here from a DMA completion or TXPKTRDY interrupt.
 		 * In any case, we must check the FIFO status here and bail out
@@ -1331,15 +1303,13 @@ void musb_host_tx(struct musb *musb, u8 epnum)
 		urb->actual_length = qh->offset;
 		musb_advance_schedule(musb, urb, hw_ep, USB_DIR_OUT);
 		return;
-#ifndef CONFIG_ARCH_MEDIATEK
 	} else if ((usb_pipeisoc(pipe) || transfer_pending) && dma) {
 		if (musb_tx_dma_program(musb->dma_controller, hw_ep, qh, urb,
 				offset, length)) {
 			if (is_cppi_enabled() || tusb_dma_omap())
 				musb_h_tx_dma_start(hw_ep);
 			return;
-			}
-#endif
+		}
 	} else	if (tx_csr & MUSB_TXCSR_DMAENAB) {
 		dev_dbg(musb->controller, "not complete, but DMA enabled?\n");
 		return;
@@ -1406,7 +1376,7 @@ void musb_host_tx(struct musb *musb, u8 epnum)
 /* Schedule next QH from musb->in_bulk and move the current qh to
  * the end; avoids starvation for other endpoints.
  */
-static void musb_bulk_rx_nak_timeout(struct musb *musb, struct musb_hw_ep *ep, int is_in)
+static void musb_bulk_rx_nak_timeout(struct musb *musb, struct musb_hw_ep *ep)
 {
 	struct dma_channel	*dma;
 	struct urb		*urb;
@@ -1468,11 +1438,6 @@ void musb_host_rx(struct musb *musb, u8 epnum)
 	u32			status;
 	struct dma_channel	*dma;
 
-#ifdef CONFIG_ARCH_MEDIATEK
-	if (qh && qh->is_use_qmu)
-		return;
-#endif
-
 	musb_ep_select(mbase, epnum);
 
 	urb = next_urb(qh);
@@ -1530,7 +1495,7 @@ void musb_host_rx(struct musb *musb, u8 epnum)
 			if (usb_pipebulk(urb->pipe)
 					&& qh->mux == 1
 					&& !list_is_singular(&musb->in_bulk)) {
-				musb_bulk_rx_nak_timeout(musb, hw_ep, 1);
+				musb_bulk_rx_nak_timeout(musb, hw_ep);
 				return;
 			}
 			musb_ep_select(mbase, epnum);
@@ -1606,8 +1571,7 @@ void musb_host_rx(struct musb *musb, u8 epnum)
 		val &= ~(MUSB_RXCSR_DMAENAB
 			| MUSB_RXCSR_H_AUTOREQ
 			| MUSB_RXCSR_AUTOCLEAR
-			| MUSB_RXCSR_RXPKTRDY
-			| MUSB_RXCSR_DMAMODE);
+			| MUSB_RXCSR_RXPKTRDY);
 		musb_writew(hw_ep->regs, MUSB_RXCSR, val);
 
 #ifdef CONFIG_USB_INVENTRA_DMA
@@ -1714,7 +1678,6 @@ void musb_host_rx(struct musb *musb, u8 epnum)
 			}
 
 			dma->desired_mode = 0;
-#ifndef CONFIG_ARCH_MEDIATEK
 #ifdef USE_MODE1
 			/* because of the issue below, mode 1 will
 			 * only rarely behave with correct semantics.
@@ -1732,7 +1695,7 @@ void musb_host_rx(struct musb *musb, u8 epnum)
 				length = urb->transfer_buffer_length;
 			}
 #endif
-#endif
+
 /* Disadvantage of using mode 1:
  *	It's basically usable only for mass storage class; essentially all
  *	other protocols also terminate transfers on short packets.
@@ -1806,101 +1769,6 @@ finish:
 	}
 }
 
-#ifdef CONFIG_ARCH_MEDIATEK
-/*
- *	X:	isoc_ep_end_idx
- Y :	MA*X_QMU_EP
- Z:	musb->nr_endpoints - 1
-
- <-----------(X)---------(Y)---------(Z)>
-
- ((EP_GROUP_A))
- <--isoc ep-->((EP_GROUP_B))
- <-----------qmu ep------->((EP_GROUP_C))
- <---------------all ep----------------->
-
- EP_GROUP_A : QMU EP and GPD# a lot (for ISOC)
- EP_GROUP_B : QMU EP and GPD# normal
- EP_GROUP_C : non-QMU EP
- *
- */
-
-enum {
-	EP_GROUP_A,
-	EP_GROUP_B,
-	EP_GROUP_C,
-};
-
-static int
-ep_group_match(struct musb *musb,
-			   struct musb_qh *qh,
-			   int is_in, int group_type)
-{
-	int match_begin[3], match_end[3];
-	int epnum, hw_end = 0;
-	int begin, end, i;
-	struct musb_hw_ep *hw_ep = NULL;
-
-	if (group_type == EP_GROUP_A) {
-		match_begin[0] = 1;
-		match_end[0] = isoc_ep_end_idx;
-
-		match_begin[1] = isoc_ep_end_idx + 1;
-		match_end[1] = MAX_QMU_EP;
-
-		match_begin[2] = MAX_QMU_EP + 1;
-		match_end[2] = musb->nr_endpoints - 1;
-
-	} else if (group_type == EP_GROUP_B) {
-		match_begin[0] = isoc_ep_end_idx + 1;
-		match_end[0] = MAX_QMU_EP;
-
-		match_begin[1] = 1;
-		match_end[1] = isoc_ep_end_idx;
-
-		match_begin[2] = MAX_QMU_EP + 1;
-		match_end[2] = musb->nr_endpoints - 1;
-	} else {
-		match_begin[0] = MAX_QMU_EP + 1;
-		match_end[0] = musb->nr_endpoints - 1;
-
-		match_begin[1] = isoc_ep_end_idx + 1;
-		match_end[1] = MAX_QMU_EP;
-
-		match_begin[2] = 1;
-		match_end[2] = isoc_ep_end_idx;
-	}
-
-	for (i = 0; i < 3; i++) {
-		begin = match_begin[i];
-		end = match_end[i];
-		for (epnum = begin, hw_ep = musb->endpoints + epnum;
-			 epnum <= end; epnum++, hw_ep++) {
-			if (musb_ep_get_qh(hw_ep, is_in) != NULL)
-				continue;
-
-			hw_end = epnum;
-		dev_dbg(musb->controller, "group<%d,%d>, qh->type:%d, find hw_ep%d, is_in:%d, intv[%d,%d], <%d,%d,%d>\n"
-			, group_type
-			, i, qh->type
-			, hw_end, is_in
-			, begin, end
-			, isoc_ep_end_idx
-			, MAX_QMU_EP
-			, musb->nr_endpoints);
-
-		/* REVERT for not matching where it belongs */
-		if (group_type < i) {
-			qh->is_use_qmu = 0;
-		}
-		return hw_end;
-		}
-	}
-
-	return 0;
-}
-#endif
-
 /* schedule nodes correspond to peripheral endpoints, like an OHCI QH.
  * the software schedule associates multiple such nodes with a given
  * host side hardware endpoint + direction; scheduling may activate
@@ -1913,7 +1781,7 @@ static int musb_schedule(
 {
 	int			idle;
 	int			best_diff;
-	int			best_end, epnum, hw_end = 0;
+	int			best_end, epnum;
 	struct musb_hw_ep	*hw_ep = NULL;
 	struct list_head	*head = NULL;
 	u8			toggle;
@@ -1938,26 +1806,7 @@ static int musb_schedule(
 	 */
 	best_diff = 4096;
 	best_end = -1;
-#ifdef CONFIG_ARCH_MEDIATEK
-	{
-		int group_type;
 
-		if (!qh->is_use_qmu)
-			group_type = EP_GROUP_C;
-		else if (qh->type == USB_ENDPOINT_XFER_ISOC)
-			group_type = EP_GROUP_A;
-		else
-			group_type = EP_GROUP_B;
-
-		epnum = hw_end = ep_group_match(musb, qh, is_in, group_type);
-		if (!hw_end) {
-			dev_dbg(musb->controller, "musb::error!not find a ep for the urb\r\n");
-			return -ENOSPC;
-		}
-
-		hw_ep = musb->endpoints + hw_end;
-	}
-#else
 	for (epnum = 1, hw_ep = musb->endpoints + 1;
 			epnum < musb->nr_endpoints;
 			epnum++, hw_ep++) {
@@ -2023,7 +1872,7 @@ static int musb_schedule(
 	} else if (best_end < 0) {
 		return -ENOSPC;
 	}
-#endif
+
 	idle = 1;
 	qh->mux = 0;
 	hw_ep = musb->endpoints + best_end;
@@ -2036,21 +1885,8 @@ success:
 	}
 	qh->hw_ep = hw_ep;
 	qh->hep->hcpriv = qh;
-	if (idle) {
-#ifdef CONFIG_ARCH_MEDIATEK
-		/* downgrade to non-qmu
-		 * if no specific ep grabbed
-		 * when isoc_ep_gpd_count is set
-		 */
-		if (qh->is_use_qmu) {
-			musb_ep_set_qh(hw_ep, is_in, qh);
-			mtk_kick_CmdQ(musb, is_in ? 1:0, qh, next_urb(qh));
-		} else
-			musb_start_urb(musb, is_in, qh);
-#else
+	if (idle)
 		musb_start_urb(musb, is_in, qh);
-#endif
-	}
 	return 0;
 }
 
@@ -2102,15 +1938,6 @@ int musb_urb_enqueue(
 	 * disabled, testing for empty qh->ring and avoiding qh setup costs
 	 * except for the first urb queued after a config change.
 	 */
-#ifdef CONFIG_ARCH_MEDIATEK
-	if (mtk_host_qmu_concurrent && qh && qh->is_use_qmu && (ret == 0)) {
-		mtk_kick_CmdQ(musb,
-					  (epd->bEndpointAddress & USB_ENDPOINT_DIR_MASK)
-					  ? 1:0, qh, urb);
-		spin_unlock_irqrestore(&musb->lock, flags);
-		return ret;
-	}
-#endif
 	if (qh || ret)
 		return ret;
 
@@ -2127,11 +1954,6 @@ int musb_urb_enqueue(
 		spin_unlock_irqrestore(&musb->lock, flags);
 		return -ENOMEM;
 	}
-
-#ifdef CONFIG_ARCH_MEDIATEK
-	if (urb->dev->devnum)
-		musb_host_active_dev_add((unsigned int)urb->dev->devnum);
-#endif
 
 	qh->hep = hep;
 	qh->dev = urb->dev;
@@ -2264,16 +2086,10 @@ int musb_urb_enqueue(
 		kfree(qh);
 		qh = NULL;
 		ret = 0;
-	} else {
-#ifdef CONFIG_ARCH_MEDIATEK
-		if ((!usb_pipecontrol(urb->pipe))
-			&& ((usb_pipetype(urb->pipe) + 1)
-			& mtk_host_qmu_pipe_msk))
-			qh->is_use_qmu = 1;
-#endif
+	} else
 		ret = musb_schedule(musb, qh,
 				epd->bEndpointAddress & USB_ENDPOINT_DIR_MASK);
-	}
+
 	if (ret == 0) {
 		urb->hcpriv = qh;
 		/* FIXME set urb->start_frame for iso/intr, it's tested in
@@ -2384,11 +2200,6 @@ int musb_urb_dequeue(
 	if (!qh)
 		goto done;
 
-#ifdef CONFIG_ARCH_MEDIATEK
-	/* abort HW transaction on this ep */
-	if (qh->is_use_qmu)
-		mtk_disable_q(musb, qh->hw_ep->epnum, is_in);
-#endif
 	/*
 	 * Any URB not actively programmed into endpoint hardware can be
 	 * immediately given back; that's any URB not at the head of an
@@ -2415,35 +2226,11 @@ int musb_urb_dequeue(
 		 */
 		if (ready && list_empty(&qh->hep->urb_list)) {
 			qh->hep->hcpriv = NULL;
-#ifdef CONFIG_ARCH_MEDIATEK
-			if (qh->is_use_qmu && mtk_host_qmu_concurrent) {
-				dev_dbg(musb->controller, "qmu with concurrent, exit\n");
-				goto done;
-			} else {
-				dev_dbg(musb->controller, "qmu<%d>, concurrent<%d>\n",
-						qh->is_use_qmu,
-			mtk_host_qmu_concurrent);
-			}
-#endif
 			list_del(&qh->ring);
 			kfree(qh);
 		}
-	} else {
-#ifdef CONFIG_ARCH_MEDIATEK
-		/* qmu non-concurrent case, stop HW */
-		if (qh->is_use_qmu && !mtk_host_qmu_concurrent)
-			mtk_disable_q(musb, qh->hw_ep->epnum, is_in);
-
-		if (qh->is_use_qmu && mtk_host_qmu_concurrent) {
-			/* concurrent case, recycle SW part, leave HW part go */
-			ret = 0;
-			musb_advance_schedule(musb, urb, qh->hw_ep, is_in);
-		} else
-			ret = musb_cleanup_urb(urb, qh);
-#else
+	} else
 		ret = musb_cleanup_urb(urb, qh);
-#endif
-	}
 done:
 	spin_unlock_irqrestore(&musb->lock, flags);
 	return ret;
@@ -2467,11 +2254,7 @@ musb_h_disable(struct usb_hcd *hcd, struct usb_host_endpoint *hep)
 		goto exit;
 
 	/* NOTE: qh is invalid unless !list_empty(&hep->urb_list) */
-#ifdef CONFIG_ARCH_MEDIATEK
-	/* abort HW transaction on this ep */
-	if (qh->is_use_qmu)
-		mtk_disable_q(musb, qh->hw_ep->epnum, is_in);
-#endif
+
 	/* Kick the first URB off the hardware, if needed */
 	qh->is_ready = 0;
 	if (musb_ep_get_qh(qh->hw_ep, is_in) == qh) {

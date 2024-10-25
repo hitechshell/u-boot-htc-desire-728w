@@ -282,7 +282,6 @@
 #define MUSB_TXCSR_MODE			0x2000
 
 /* "bus control"/target registers, for host side multipoint (external hubs) */
-#ifndef CONFIG_ARCH_MEDIATEK
 #define MUSB_TXFUNCADDR		0x00
 #define MUSB_TXHUBADDR		0x02
 #define MUSB_TXHUBPORT		0x03
@@ -290,23 +289,9 @@
 #define MUSB_RXFUNCADDR		0x04
 #define MUSB_RXHUBADDR		0x06
 #define MUSB_RXHUBPORT		0x07
-#else
-#define MUSB_TXFUNCADDR	0x0480
-#define MUSB_TXHUBADDR	0x0482
-#define MUSB_TXHUBPORT	0x0482
-#define MUSB_RXFUNCADDR	0x0484
-#define MUSB_RXHUBADDR	0x0486
-#define MUSB_RXHUBPORT	0x0486
-#endif
 
-#if defined(CONFIG_ARCH_MEDIATEK)
-#define MUSB_BUSCTL_OFFSET(_epnum, _offset) \
-	(0x480 + (8*(_epnum)) + (_offset))
-#else
 #define MUSB_BUSCTL_OFFSET(_epnum, _offset) \
 	(0x80 + (8*(_epnum)) + (_offset))
-
-#endif
 
 #else /* CONFIG_ARCH_SUNXI */
 
@@ -387,13 +372,6 @@
 
 #endif /* CONFIG_ARCH_SUNXI */
 
-#define MUSB_RXTOG	0x0080
-#define MUSB_RXTOGEN	0x0082
-#define MUSB_TXTOG	0x0084
-#define MUSB_TXTOGEN	0x0086
-#define MUSB_QMUBASE	0x800
-#define MUSB_QISAR	0xc00
-#define MUSB_QIMR	0xc04
 static inline void musb_write_txfifosz(void __iomem *mbase, u8 c_size)
 {
 	musb_writeb(mbase, MUSB_TXFIFOSZ, c_size);
@@ -474,23 +452,23 @@ static inline void __iomem *musb_read_target_reg_base(u8 i, void __iomem *mbase)
 {
 	return (MUSB_BUSCTL_OFFSET(i, 0) + mbase);
 }
-#ifndef CONFIG_ARCH_MEDIATEK
-static inline void musb_write_rxfunaddr(void __iomem *mbase, u8 epnum,
-										u8 qh_addr_reg)
+
+static inline void musb_write_rxfunaddr(void __iomem *ep_target_regs,
+		u8 qh_addr_reg)
 {
-	musb_writeb(mbase, MUSB_BUSCTL_OFFSET(epnum, MUSB_RXFUNCADDR), qh_addr_reg);
+	musb_writeb(ep_target_regs, MUSB_RXFUNCADDR, qh_addr_reg);
 }
 
-static inline void musb_write_rxhubaddr(void __iomem *mbase, u8 epnum,
-										u8 qh_addr_reg)
+static inline void musb_write_rxhubaddr(void __iomem *ep_target_regs,
+		u8 qh_h_addr_reg)
 {
-	musb_writeb(mbase, MUSB_BUSCTL_OFFSET(epnum, MUSB_RXHUBADDR), qh_addr_reg);
+	musb_writeb(ep_target_regs, MUSB_RXHUBADDR, qh_h_addr_reg);
 }
 
-static inline void musb_write_rxhubport(void __iomem *mbase, u8 epnum,
-										u8 qh_addr_reg)
+static inline void musb_write_rxhubport(void __iomem *ep_target_regs,
+		u8 qh_h_port_reg)
 {
-	musb_writeb(mbase, MUSB_BUSCTL_OFFSET(epnum, MUSB_RXHUBPORT), qh_addr_reg);
+	musb_writeb(ep_target_regs, MUSB_RXHUBPORT, qh_h_port_reg);
 }
 
 static inline void  musb_write_txfunaddr(void __iomem *mbase, u8 epnum,
@@ -513,55 +491,7 @@ static inline void  musb_write_txhubport(void __iomem *mbase, u8 epnum,
 	musb_writeb(mbase, MUSB_BUSCTL_OFFSET(epnum, MUSB_TXHUBPORT),
 			qh_h_port_reg);
 }
-#else
-static inline void musb_write_rxfunaddr(void __iomem *mbase, u8 epnum, u8 qh_addr_reg)
-{
-	musb_writew(mbase, MUSB_RXFUNCADDR + 8 * epnum, qh_addr_reg);
-}
 
-static inline void musb_write_rxhubaddr(void __iomem *mbase, u8 epnum, u8 qh_h_addr_reg)
-{
-	u16 rx_hub_port_addr = musb_readw(mbase, 0x0486 + 8 * epnum);
-
-	rx_hub_port_addr &= 0xff00;
-	rx_hub_port_addr |= qh_h_addr_reg;
-	musb_writew(mbase, MUSB_RXHUBADDR + 8 * epnum, rx_hub_port_addr);
-}
-
-static inline void musb_write_rxhubport(void __iomem *mbase, u8 epnum, u8 qh_h_port_reg)
-{
-	u16 rx_hub_port_addr = musb_readw(mbase, 0x0486 + 8 * epnum);
-	u16 rx_port_addr = (u16) qh_h_port_reg;
-
-	rx_hub_port_addr &= 0x00ff;
-	rx_hub_port_addr |= (rx_port_addr << 8);
-	musb_writew(mbase, MUSB_RXHUBADDR + 8 * epnum, rx_hub_port_addr);
-}
-
-static inline void musb_write_txfunaddr(void __iomem *mbase, u8 epnum, u8 qh_addr_reg)
-{
-	musb_writew(mbase, MUSB_TXFUNCADDR + 8 * epnum, qh_addr_reg);
-}
-
-static inline void musb_write_txhubaddr(void __iomem *mbase, u8 epnum, u8 qh_h_addr_reg)
-{
-	u16 tx_hub_port_addr = musb_readw(mbase, 0x0482 + 8 * epnum);
-
-	tx_hub_port_addr &= 0xff00;
-	tx_hub_port_addr |= qh_h_addr_reg;
-	musb_writew(mbase, MUSB_TXHUBADDR + 8 * epnum, tx_hub_port_addr);
-}
-
-static inline void musb_write_txhubport(void __iomem *mbase, u8 epnum, u8 qh_h_port_reg)
-{
-	u16 tx_hub_port_addr = musb_readw(mbase, 0x0482 + 8 * epnum);
-	u16 tx_port_addr = (u16) qh_h_port_reg;
-
-	tx_hub_port_addr &= 0x00ff;
-	tx_hub_port_addr |= (tx_port_addr << 8);
-	musb_writew(mbase, MUSB_TXHUBADDR + 8 * epnum, tx_hub_port_addr);
-}
-#endif
 static inline u8 musb_read_rxfunaddr(void __iomem *mbase, u8 epnum)
 {
 	return musb_readb(mbase, MUSB_BUSCTL_OFFSET(epnum, MUSB_RXFUNCADDR));

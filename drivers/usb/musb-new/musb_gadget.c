@@ -19,7 +19,6 @@
 #include <linux/smp.h>
 #include <linux/spinlock.h>
 #include <linux/delay.h>
-#include <linux/dma-mapping.h>
 #include <linux/slab.h>
 #else
 #include <dm.h>
@@ -27,11 +26,12 @@
 #include <linux/bug.h>
 #include <linux/printk.h>
 #include <linux/usb/ch9.h>
+#include <linux/dma-mapping.h>
 #include "linux-compat.h"
 #endif
 
 #include "musb_core.h"
-#include "musb_qmu.h"
+
 /* MUSB PERIPHERAL status 3-mar-2006:
  *
  * - EP0 seems solid.  It passes both USBCV and usbtest control cases.
@@ -85,12 +85,11 @@
 static inline void map_dma_buffer(struct musb_request *request,
 			struct musb *musb, struct musb_ep *musb_ep)
 {
-#ifndef CONFIG_ARCH_MEDIATEK
 	int compatible = true;
 	struct dma_controller *dma = musb->dma_controller;
-#endif
+
 	request->map_state = UN_MAPPED;
-#ifndef CONFIG_ARCH_MEDIATEK
+
 	if (!is_dma_capable() || !musb_ep->dma)
 		return;
 
@@ -105,10 +104,8 @@ static inline void map_dma_buffer(struct musb_request *request,
 	if (!compatible)
 		return;
 
-#endif
 	if (request->request.dma == DMA_ADDR_INVALID) {
 		request->request.dma = dma_map_single(
-				musb->controller,
 				request->request.buf,
 				request->request.length,
 				request->tx
@@ -116,6 +113,7 @@ static inline void map_dma_buffer(struct musb_request *request,
 					: DMA_FROM_DEVICE);
 		request->map_state = MUSB_MAPPED;
 	} else {
+#ifndef __UBOOT__
 		dma_sync_single_for_device(musb->controller,
 			request->request.dma,
 			request->request.length,
@@ -123,6 +121,7 @@ static inline void map_dma_buffer(struct musb_request *request,
 				? DMA_TO_DEVICE
 				: DMA_FROM_DEVICE);
 		request->map_state = PRE_MAPPED;
+#endif
 	}
 }
 
@@ -139,7 +138,7 @@ static inline void unmap_dma_buffer(struct musb_request *request,
 		return;
 	}
 	if (request->map_state == MUSB_MAPPED) {
-		dma_unmap_single(musb->controller,
+		dma_unmap_single(
 			request->request.dma,
 			request->request.length,
 			request->tx
@@ -147,12 +146,14 @@ static inline void unmap_dma_buffer(struct musb_request *request,
 				: DMA_FROM_DEVICE);
 		request->request.dma = DMA_ADDR_INVALID;
 	} else { /* PRE_MAPPED */
+#ifndef __UBOOT__
 		dma_sync_single_for_cpu(musb->controller,
 			request->request.dma,
 			request->request.length,
 			request->tx
 				? DMA_TO_DEVICE
 				: DMA_FROM_DEVICE);
+#endif
 	}
 	request->map_state = UN_MAPPED;
 }
@@ -220,13 +221,10 @@ static void nuke(struct musb_ep *ep, const int status)
 {
 	struct musb		*musb = ep->musb;
 	struct musb_request	*req = NULL;
-#ifndef CONFIG_ARCH_MEDIATEK
 	void __iomem *epio = ep->musb->endpoints[ep->current_epnum].regs;
-#endif
+
 	ep->busy = 1;
-#ifdef CONFIG_ARCH_MEDIATEK
-	musb_flush_qmu(ep->hw_ep->epnum, (ep->is_in ? TXQ : RXQ));
-#else
+
 	if (is_dma_capable() && ep->dma) {
 		struct dma_controller	*c = ep->musb->dma_controller;
 		int value;
@@ -254,7 +252,7 @@ static void nuke(struct musb_ep *ep, const int status)
 		c->channel_release(ep->dma);
 		ep->dma = NULL;
 	}
-#endif
+
 	while (!list_empty(&ep->req_list)) {
 		req = list_first_entry(&ep->req_list, struct musb_request, list);
 		musb_g_giveback(ep, &req->request, status);
@@ -1106,10 +1104,10 @@ static int musb_gadget_enable(struct usb_ep *ep,
 			dev_dbg(musb->controller, "packet size beyond hardware FIFO size\n");
 			goto fail;
 		}
-#ifndef CONFIG_ARCH_MEDIATEK
+
 		int_txe |= (1 << epnum);
 		musb_writew(mbase, MUSB_INTRTXE, int_txe);
-#endif
+
 		/* REVISIT if can_bulk_split(), use by updating "tmp";
 		 * likewise high bandwidth periodic tx
 		 */
@@ -1146,10 +1144,10 @@ static int musb_gadget_enable(struct usb_ep *ep,
 			dev_dbg(musb->controller, "packet size beyond hardware FIFO size\n");
 			goto fail;
 		}
-#ifndef CONFIG_ARCH_MEDIATEK
+
 		int_rxe |= (1 << epnum);
 		musb_writew(mbase, MUSB_INTRRXE, int_rxe);
-#endif
+
 		/* REVISIT if can_bulk_combine() use by updating "tmp"
 		 * likewise high bandwidth periodic rx
 		 */
@@ -1168,7 +1166,7 @@ static int musb_gadget_enable(struct usb_ep *ep,
 			csr &= ~(MUSB_TXCSR_MODE | MUSB_TXCSR_TXPKTRDY);
 			musb_writew(regs, MUSB_TXCSR, csr);
 		}
-#ifndef CONFIG_ARCH_MEDIATEK
+
 		csr = MUSB_RXCSR_FLUSHFIFO | MUSB_RXCSR_CLRDATATOG;
 		if (musb_ep->type == USB_ENDPOINT_XFER_ISOC)
 			csr |= MUSB_RXCSR_P_ISO;
@@ -1178,9 +1176,8 @@ static int musb_gadget_enable(struct usb_ep *ep,
 		/* set twice in case of double buffering */
 		musb_writew(regs, MUSB_RXCSR, csr);
 		musb_writew(regs, MUSB_RXCSR, csr);
-#endif
 	}
-#ifndef CONFIG_ARCH_MEDIATEK
+
 	/* NOTE:  all the I/O code _should_ work fine without DMA, in case
 	 * for some reason you run out of channels here.
 	 */
@@ -1191,15 +1188,13 @@ static int musb_gadget_enable(struct usb_ep *ep,
 				(desc->bEndpointAddress & USB_DIR_IN));
 	} else
 		musb_ep->dma = NULL;
-#endif
+
 	musb_ep->end_point.desc = desc;
 	musb_ep->desc = desc;
 	musb_ep->busy = 0;
 	musb_ep->wedged = 0;
 	status = 0;
-#ifdef CONFIG_ARCH_MEDIATEK
-	mtk_qmu_enable(musb, epnum, !(musb_ep->is_in));
-#endif
+
 	pr_debug("%s periph: enabled %s for %s %s, %smaxpacket %d\n",
 			musb_driver_name, musb_ep->end_point.name,
 			({ char *s; switch (musb_ep->type) {
@@ -1226,7 +1221,6 @@ static int musb_gadget_disable(struct usb_ep *ep)
 	unsigned long	flags;
 	struct musb	*musb;
 	u8		epnum;
-	u16 	csr;
 	struct musb_ep	*musb_ep;
 	void __iomem	*epio;
 	int		status = 0;
@@ -1241,24 +1235,14 @@ static int musb_gadget_disable(struct usb_ep *ep)
 
 	/* zero the endpoint sizes */
 	if (musb_ep->is_in) {
-#ifndef CONFIG_ARCH_MEDIATEK
 		u16 int_txe = musb_readw(musb->mregs, MUSB_INTRTXE);
 		int_txe &= ~(1 << epnum);
 		musb_writew(musb->mregs, MUSB_INTRTXE, int_txe);
-#endif
 		musb_writew(epio, MUSB_TXMAXP, 0);
 	} else {
-#ifndef CONFIG_ARCH_MEDIATEK
 		u16 int_rxe = musb_readw(musb->mregs, MUSB_INTRRXE);
 		int_rxe &= ~(1 << epnum);
 		musb_writew(musb->mregs, MUSB_INTRRXE, int_rxe);
-#endif
-		/* flush fifo here */
-		csr = MUSB_RXCSR_FLUSHFIFO | MUSB_RXCSR_CLRDATATOG;
-		/* set twice in case of double buffering */
-		musb_writew(epio, MUSB_RXCSR, csr);
-		musb_writew(epio, MUSB_RXCSR, csr);
-
 		musb_writew(epio, MUSB_RXMAXP, 0);
 	}
 
@@ -1323,13 +1307,6 @@ struct free_record {
  */
 void musb_ep_restart(struct musb *musb, struct musb_request *req)
 {
-#ifdef CONFIG_ARCH_MEDIATEK
-	pr_debug("<ratelimit> <== %s request %p len %u on hw_ep%d"
-		, req->tx ? "TX/IN" : "RX/OUT"
-		, &req->request
-		, req->request.length
-		, req->epnum);
-#else
 	dev_dbg(musb->controller, "<== %s request %p len %u on hw_ep%d\n",
 		req->tx ? "TX/IN" : "RX/OUT",
 		&req->request, req->request.length, req->epnum);
@@ -1339,8 +1316,6 @@ void musb_ep_restart(struct musb *musb, struct musb_request *req)
 		txstate(musb, req);
 	else
 		rxstate(musb, req);
-
-#endif
 }
 
 static int musb_gadget_queue(struct usb_ep *ep, struct usb_request *req,
@@ -1388,56 +1363,10 @@ static int musb_gadget_queue(struct usb_ep *ep, struct usb_request *req,
 
 	/* add request to the list */
 	list_add_tail(&request->list, &musb_ep->req_list);
-#ifdef CONFIG_ARCH_MEDIATEK
-	if (request->request.dma != DMA_ADDR_INVALID) {
-		/* TX case */
-		if (request->tx) {
-			/* TX QMU don't have info for length sent, set this field in advance */
-			request->request.actual = request->request.length;
-			/* only enqueue for length > 0 packet. Don't send ZLP here for MSC protocol. */
-			if (request->request.length > 0) {
 
-				musb_kick_D_CmdQ(musb, request);
-
-			} else if (request->request.length == 0) {	/* for UMS special case */
-				int cnt = 50; /* 50*200us, total 10 ms */
-				int is_timeout = 1;
-
-				QMU_WARN("TX ZLP sent case\n");
-
-				/* wait QMU tx done, should be enough in UMS case due to protocol */
-				while (cnt--) {
-					if (musb_is_qmu_stop(request->epnum, request->tx ? 0 : 1)) {
-						is_timeout = 0;
-						break;
-					}
-					udelay(200);
-				}
-
-				if (!is_timeout) {
-					musb_tx_zlp_qmu(musb, request->epnum);
-					musb_g_giveback(musb_ep, &(request->request), 0);
-
-				} else {
-					/* let qmu_done_tx to handle this */
-					QMU_WARN("TX ZLP sent in qmu_done_tx\n");
-					goto cleanup;
-				}
-
-			} else {
-				QMU_ERR("ERR, TX, request->request.length(%d)\n",
-						request->request.length);
-			}
-		} else {	/* RX case */
-			musb_kick_D_CmdQ(musb, request);
-		}
-	}
-	goto cleanup;
-#else
-		/* it this is the head of the queue, start i/o ... */
+	/* it this is the head of the queue, start i/o ... */
 	if (!musb_ep->busy && &request->list == musb_ep->req_list.next)
-			musb_ep_restart(musb, request);
-#endif
+		musb_ep_restart(musb, request);
 
 cleanup:
 	spin_unlock_irqrestore(&musb->lock, lockflags);
@@ -1469,21 +1398,12 @@ static int musb_gadget_dequeue(struct usb_ep *ep, struct usb_request *request)
 	}
 
 	/* if the hardware doesn't have the request, easy ... */
-	if (musb_ep->req_list.next != &req->list || musb_ep->busy) {
+	if (musb_ep->req_list.next != &req->list || musb_ep->busy)
 		musb_g_giveback(musb_ep, request, -ECONNRESET);
-	}
-#ifdef MUSB_QMU_SUPPORT
-	else {
-		QMU_DBG("dequeue req(%p), ep(%d), swep(%d)\n", request, musb_ep->hw_ep->epnum,
-				ep->address);
-		musb_flush_qmu(musb_ep->hw_ep->epnum, (musb_ep->is_in ? TXQ : RXQ));
-		musb_g_giveback(musb_ep, request, -ECONNRESET);
-		musb_restart_qmu(musb, musb_ep->hw_ep->epnum, (musb_ep->is_in ? TXQ : RXQ));
-	}
-#else
+
 	/* ... else abort the dma transfer ... */
 	else if (is_dma_capable() && musb_ep->dma) {
-		struct dma_controller *c = musb->dma_controller;
+		struct dma_controller	*c = musb->dma_controller;
 
 		musb_ep_select(musb->mregs, musb_ep->current_epnum);
 		if (c->channel_abort)
@@ -1498,7 +1418,7 @@ static int musb_gadget_dequeue(struct usb_ep *ep, struct usb_request *request)
 		 */
 		musb_g_giveback(musb_ep, request, -ECONNRESET);
 	}
-#endif
+
 done:
 	spin_unlock_irqrestore(&musb->lock, flags);
 	return status;
@@ -1647,17 +1567,11 @@ static void musb_gadget_fifo_flush(struct usb_ep *ep)
 	spin_lock_irqsave(&musb->lock, flags);
 	musb_ep_select(mbase, (u8) epnum);
 
-#ifndef CONFIG_ARCH_MEDIATEK
 	/* disable interrupts */
 	int_txe = musb_readw(mbase, MUSB_INTRTXE);
 	musb_writew(mbase, MUSB_INTRTXE, int_txe & ~(1 << epnum));
-#endif
+
 	if (musb_ep->is_in) {
-#ifdef MUSB_QMU_SUPPORT
-		QMU_WARN("fifo flush(%d), sw(%d)\n", epnum, ep->address);
-		musb_flush_qmu(epnum, TXQ);
-		musb_restart_qmu(musb, epnum, TXQ);
-#endif
 		csr = musb_readw(epio, MUSB_TXCSR);
 		if (csr & MUSB_TXCSR_FIFONOTEMPTY) {
 			csr |= MUSB_TXCSR_FLUSHFIFO | MUSB_TXCSR_P_WZC_BITS;
@@ -1672,20 +1586,14 @@ static void musb_gadget_fifo_flush(struct usb_ep *ep)
 			musb_writew(epio, MUSB_TXCSR, csr);
 		}
 	} else {
-#ifdef MUSB_QMU_SUPPORT
-		QMU_WARN("fifo flush(%d), sw(%d)\n", epnum, ep->address);
-		musb_flush_qmu(epnum, RXQ);
-		musb_restart_qmu(musb, epnum, RXQ);
-#endif
 		csr = musb_readw(epio, MUSB_RXCSR);
 		csr |= MUSB_RXCSR_FLUSHFIFO | MUSB_RXCSR_P_WZC_BITS;
 		musb_writew(epio, MUSB_RXCSR, csr);
 		musb_writew(epio, MUSB_RXCSR, csr);
 	}
-#ifndef CONFIG_ARCH_MEDIATEK
+
 	/* re-enable interrupt */
 	musb_writew(mbase, MUSB_INTRTXE, int_txe);
-#endif
 	spin_unlock_irqrestore(&musb->lock, flags);
 }
 
