@@ -16,6 +16,7 @@ config TARGET_MT6735
 	bool "SPL for MediaTek MT6735 SoC"
 	select ARM64
 	select SPL
+	select LINUX_KERNEL_IMAGE_HEADER
 	help
 	  The MediaTek MT6735 is a ARM-based SoC with a quad-core Cortex-A53
 	  including NEON and GPU, Mali-T720p graphics, crypto engine,
@@ -158,6 +159,9 @@ config SYS_CONFIG_NAME
 	default "mt8512" if TARGET_MT8512
 	default "mt8516" if TARGET_MT8516
 	default "mt8518" if TARGET_MT8518
+
+config LNX_KRNL_IMG_TEXT_OFFSET_BASE
+	default 0x40078000
 
 config MTK_BROM_HEADER_INFO
 	string
