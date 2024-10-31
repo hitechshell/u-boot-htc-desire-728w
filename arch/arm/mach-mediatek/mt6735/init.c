@@ -153,6 +153,13 @@ int mach_cpu_init(void)
 
 int mtk_soc_early_init(void)
 {
+	printf("mtk_soc_early_init\n");
+	return 0;
+}
+
+/*
+int mtk_soc_early_init(void)
+{
 	struct udevice *dev;
 	int ret;
 
@@ -213,17 +220,15 @@ int mtk_soc_early_init(void)
     
 	return 0;
 }
+*/
 
 int dram_init(void)
 {
-	return fdtdec_setup_mem_size_base();
-}
+	int ret = fdtdec_setup_mem_size_base();
 
-int dram_init_banksize(void)
-{
-	gd->bd->bi_dram[0].start = gd->ram_base;
-	gd->bd->bi_dram[0].size = gd->ram_size;
-	return 0;
+	printf("memtek: dram_init done!\n");
+
+	return ret;
 }
 
 #ifdef CONFIG_SPL_BUILD
