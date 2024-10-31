@@ -1235,5 +1235,6 @@ U_BOOT_DRIVER(mt6735_pinctrl) = {
 	.of_match = mt6735_pctrl_match,
 	.ops = &mtk_pinctrl_ops,
 	.probe = mtk_pinctrl_mt6735_probe,
+	.bind = mtk_pinctrl_common_bind,
 	.priv_auto	= sizeof(struct mtk_pinctrl_priv),
 };
