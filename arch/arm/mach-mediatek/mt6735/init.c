@@ -216,21 +216,13 @@ int mtk_soc_early_init(void)
 
 int dram_init(void)
 {
-	struct ram_info ram;
-	struct udevice *dev;
-	int ret;
-    
-	ret = uclass_first_device_err(UCLASS_RAM, &dev);
-	if (ret)
-		return ret;
+	return fdtdec_setup_mem_size_base();
+}
 
-	ret = ram_get_info(dev, &ram);
-	if (ret)
-		return ret;
-    gd->ram_base = ram.base;
-    gd->ram_size = ram.size;
-    printf("RAM init base = 0x%lx, size = 0x%zx\n", gd->ram_base, ram.size);
-    
+int dram_init_banksize(void)
+{
+	gd->bd->bi_dram[0].start = gd->ram_base;
+	gd->bd->bi_dram[0].size = gd->ram_size;
 	return 0;
 }
 
