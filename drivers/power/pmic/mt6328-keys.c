@@ -28,19 +28,39 @@ static int mtk_pwrkey_get_value(struct udevice *dev, unsigned offset)
 
 	switch (offset) {
 	case 0: /* Power button */
-		return (reg & BIT(PWRKEY_ON_INT_BIT)) != 0;
+		return (val & BIT(PWRKEY_ON_INT_BIT)) != 0;
 		break;
 	case 1: /* Reset button */
 	default:
-		return (reg & BIT(HOMEKEY_ON_INT_BIT)) != 0;
+		return (val & BIT(HOMEKEY_ON_INT_BIT)) != 0;
 		break;
 	}
 }
 
+static int mtk_pwrkey_set_value(struct udevice *dev, unsigned int pin, int val)
+{
+	debug("mtk_pwrkey_set_value pin: %d val: %d\n", pin, val);
+	return 0;
+}
+
+static int mtk_pwrkey_direction_input(struct udevice *dev, unsigned int pin)
+{
+	debug("mtk_pwrkey_direction_input pin: %d\n", pin);
+	return 0;
+}
+
+static int mtk_pwrkey_direction_output(struct udevice *dev, unsigned int pin, int val)
+{
+	debug("mtk_pwrkey_direction_output pin: %d val: %d\n", pin, val);
+	return 0;
+}
 
 static const struct dm_gpio_ops mtk_pwrkey_ops = {
-	.get_value		= mtk_pwrkey_get_value,
+	.get_value			= mtk_pwrkey_get_value,
+	.set_value			= mtk_pwrkey_set_value,
 	.get_function		= mtk_pwrkey_get_function,
+	.direction_input	= mtk_pwrkey_direction_input,
+	.direction_output	= mtk_pwrkey_direction_output
 };
 
 static int mtk_pwrkey_probe(struct udevice *dev)
